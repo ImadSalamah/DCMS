@@ -7,12 +7,9 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class AddUserPage extends StatefulWidget {

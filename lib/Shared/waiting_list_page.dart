@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
 import '../Doctor/Initialexamination.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 
 class WaitingListPage extends StatefulWidget {

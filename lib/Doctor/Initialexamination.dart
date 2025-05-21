@@ -186,19 +186,21 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
 
   Widget _buildDentalChart() => Column(
     children: [
-      Container(
-        height: 600,
-        padding: const EdgeInsets.all(20),
-        child: TeethSelector(
-          age: widget.age,
-          onChange: (selectedTeeth) {
-            _updateDentalChart(selectedTeeth.cast<String>());
-          },
-          initiallySelected: (_examData['dentalChart']['selectedTeeth'] as List<dynamic>?)?.cast<String>() ?? [],
-          colorized: _teethColors,
-          onColorUpdate: (colors) {
-            _teethColors = colors;
-          },
+      SizedBox(
+ height: 600, // Maintain the overall height of the container
+        child: FittedBox(
+          fit: BoxFit.contain, // Scale the content to fit within the container
+          child: TeethSelector(
+ age: widget.age,
+ onChange: (selectedTeeth) {
+ _updateDentalChart(selectedTeeth.cast<String>());
+ },
+ initiallySelected: (_examData['dentalChart']['selectedTeeth'] as List<dynamic>?)?.cast<String>() ?? [],
+ colorized: _teethColors,
+ onColorUpdate: (colors) {
+ _teethColors = colors;
+ },
+ ),
         ),
       ),
       const SizedBox(height: 16),
@@ -282,80 +284,82 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
   }
 
   Widget _buildClinicalExaminationTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (widget.patientData != null) _buildPatientInfo(),
-          _buildSection('Extraoral Examination', [
-            _buildRadioGroup(
-              title: 'TMJ',
-              options: ['Normal', 'Deviation of mandible', 'Tenderness on palpation', 'Clicking sounds'],
-              key: 'tmj',
-            ),
-            _buildRadioGroup(
-              title: 'Lymph node of head and neck',
-              options: ['Normal', 'Tender', 'Enlarged'],
-              key: 'lymphNode',
-            ),
-            _buildRadioGroup(
-              title: 'Patient profile',
-              options: ['Straight', 'Convex', 'Concave'],
-              key: 'patientProfile',
-            ),
-            _buildRadioGroup(
-              title: 'Lip Competency',
-              options: ['Competent', 'Incompetent', 'Potentially competent'],
-              key: 'lipCompetency',
-            ),
-          ]),
-          _buildSection('Intraoral Examination', [
-            _buildRadioGroup(
-              title: 'Incisal classification',
-              options: ['Class I', 'Class II Div 1', 'Class II Div 2', 'Class III'],
-              key: 'incisalClassification',
-            ),
-            _buildRadioGroup(
-              title: 'Overjet',
-              options: ['Normal', 'Increased', 'Decreased'],
-              key: 'overjet',
-            ),
-            _buildRadioGroup(
-              title: 'Overbite',
-              options: ['Normal', 'Increased', 'Decreased'],
-              key: 'overbite',
-            ),
-          ]),
-          _buildSection('Soft Tissue Examination', [
-            _buildRadioGroup(
-              title: 'Hard Palate',
-              options: ['Normal', 'Tori', 'Stomatitis', 'Ulcers', 'Red lesions'],
-              key: 'hardPalate',
-            ),
-            _buildRadioGroup(
-              title: 'Buccal mucosa',
-              options: ['Normal', 'Pigmentation', 'Ulceration', 'Linea alba'],
-              key: 'buccalMucosa',
-            ),
-            _buildRadioGroup(
-              title: 'Floor of mouth',
-              options: ['Normal', 'High frenum', 'Wharton\'s duct stenosis'],
-              key: 'floorOfMouth',
-            ),
-            _buildRadioGroup(
-              title: 'In full edentulous Arch the ridge is',
-              options: ['Flappy', 'Severely resorbed', 'Well-developed ridge'],
-              key: 'edentulousRidge',
-            ),
-          ]),
-          _buildSection('Periodontal Chart (BPE)', [
-            _buildPeriodontalChart(),
-          ]),
-          _buildSection('Dental Chart', [
-            _buildDentalChart(),
-          ]),
-        ],
+ return SingleChildScrollView(
+ padding: const EdgeInsets.all(16.0),
+ child: SingleChildScrollView(
+ child: Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ if (widget.patientData != null) _buildPatientInfo(),
+ _buildSection('Extraoral Examination', [
+ _buildRadioGroup(
+ title: 'TMJ',
+ options: ['Normal', 'Deviation of mandible', 'Tenderness on palpation', 'Clicking sounds'],
+ key: 'tmj',
+ ),
+ _buildRadioGroup(
+ title: 'Lymph node of head and neck',
+ options: ['Normal', 'Tender', 'Enlarged'],
+ key: 'lymphNode',
+ ),
+ _buildRadioGroup(
+ title: 'Patient profile',
+ options: ['Straight', 'Convex', 'Concave'],
+ key: 'patientProfile',
+ ),
+ _buildRadioGroup(
+ title: 'Lip Competency',
+ options: ['Competent', 'Incompetent', 'Potentially competent'],
+ key: 'lipCompetency',
+ ),
+ ]),
+ _buildSection('Intraoral Examination', [
+ _buildRadioGroup(
+ title: 'Incisal classification',
+ options: ['Class I', 'Class II Div 1', 'Class II Div 2', 'Class III'],
+ key: 'incisalClassification',
+ ),
+ _buildRadioGroup(
+ title: 'Overjet',
+ options: ['Normal', 'Increased', 'Decreased'],
+ key: 'overjet',
+ ),
+ _buildRadioGroup(
+ title: 'Overbite',
+ options: ['Normal', 'Increased', 'Decreased'],
+ key: 'overbite',
+ ),
+ ]),
+ _buildSection('Soft Tissue Examination', [
+ _buildRadioGroup(
+ title: 'Hard Palate',
+ options: ['Normal', 'Tori', 'Stomatitis', 'Ulcers', 'Red lesions'],
+ key: 'hardPalate',
+ ),
+ _buildRadioGroup(
+ title: 'Buccal mucosa',
+ options: ['Normal', 'Pigmentation', 'Ulceration', 'Linea alba'],
+ key: 'buccalMucosa',
+ ),
+ _buildRadioGroup(
+ title: 'Floor of mouth',
+ options: ['Normal', 'High frenum', 'Wharton\'s duct stenosis'],
+ key: 'floorOfMouth',
+ ),
+ _buildRadioGroup(
+ title: 'In full edentulous Arch the ridge is',
+ options: ['Flappy', 'Severely resorbed', 'Well-developed ridge'],
+ key: 'edentulousRidge',
+ ),
+ ]),
+ _buildSection('Periodontal Chart (BPE)', [
+ _buildPeriodontalChart(),
+ ]),
+ _buildSection('Dental Chart', [
+ _buildDentalChart(),
+ ]),
+ ],
+ ),
       ),
     );
   }
