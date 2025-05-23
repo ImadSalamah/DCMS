@@ -1,7 +1,6 @@
 // FaceRecognitionOnlinePage.dart
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -10,7 +9,8 @@ class FaceRecognitionOnlinePage extends StatefulWidget {
   const FaceRecognitionOnlinePage({super.key});
 
   @override
-  State<FaceRecognitionOnlinePage> createState() => _FaceRecognitionOnlinePageState();
+  State<FaceRecognitionOnlinePage> createState() =>
+      _FaceRecognitionOnlinePageState();
 }
 
 class _FaceRecognitionOnlinePageState extends State<FaceRecognitionOnlinePage> {
@@ -24,18 +24,41 @@ class _FaceRecognitionOnlinePageState extends State<FaceRecognitionOnlinePage> {
     _initCamera();
   }
 
-  Future<void> _initCamera() async {
+Future<void> _initCamera() async {
+  try {
     final cameras = await availableCameras();
+    print("✅ Cameras found: ${cameras.length}");
+    for (final cam in cameras) {
+      print("Camera: ${cam.name} (${cam.lensDirection})");
+    }
+
+    if (cameras.isEmpty) {
+      setState(() {
+        _result = 'لا توجد كاميرات متاحة';
+      });
+      return;
+    }
+
     _controller = CameraController(cameras[0], ResolutionPreset.medium);
     await _controller!.initialize();
+    print("✅ Camera initialized");
+
     setState(() {});
 
-    // Start streaming every 30ms
     _timer = Timer.periodic(const Duration(milliseconds: 30), (_) => _processFrame());
+  } catch (e) {
+    print("❌ Camera init error: $e");
+    setState(() {
+      _result = 'فشل في فتح الكاميرا';
+    });
   }
+}
+
 
   Future<void> _processFrame() async {
-    if (!_controller!.value.isInitialized || _controller!.value.isTakingPicture) return;
+    if (!_controller!.value.isInitialized || _controller!.value.isTakingPicture) {
+      return;
+    }
 
     try {
       final image = await _controller!.takePicture();
@@ -43,7 +66,7 @@ class _FaceRecognitionOnlinePageState extends State<FaceRecognitionOnlinePage> {
       final base64Image = base64Encode(bytes);
 
       final response = await http.post(
-Uri.parse('http://192.168.1.101:5050/recognize'),
+        Uri.parse('http://192.168.1.101:5050/recognize'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'image': base64Image}),
       );
@@ -67,7 +90,7 @@ Uri.parse('http://192.168.1.101:5050/recognize'),
 
   @override
   void dispose() {
-    _timer.cancel();
+    if (_timer.isActive) _timer.cancel();
     _controller?.dispose();
     super.dispose();
   }
