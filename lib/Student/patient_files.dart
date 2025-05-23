@@ -1,6 +1,9 @@
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:698338353.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:4075729156.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:2120095562.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:1327536519.
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
 
@@ -13,7 +16,6 @@ class PatientFilesPage extends StatefulWidget {
 
 class _PatientFilesPageState extends State<PatientFilesPage> {
   final Color primaryColor = const Color(0xFF2A7A94);
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   late DatabaseReference _usersRef;
   late DatabaseReference _waitingListRef;
 
@@ -243,6 +245,7 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
         filteredWaitingList = List.from(waitingList);
       });
 
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${_translate(context, 'remove_from_waiting_list')} ${user['name']}'),
@@ -337,84 +340,6 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
                   isInWaitingList
                       ? _translate(context, 'remove_from_waiting_list')
                       : _translate(context, 'add_to_waiting_list'),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWaitingListCard(Map<String, dynamic> user, BuildContext context) {
-    final fullName = user['name']?.toString() ?? '';
-    final phone = user['phone']?.toString() ?? '';
-    final age = user['age'] is int ? user['age'] : 0;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      color: Colors.grey[100],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fullName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'ID: ${user['id']}',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                Icon(
-                  Icons.access_time,
-                  color: primaryColor,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.phone, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(phone),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.cake, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(age > 0 ? '$age ${_translate(context, 'age')}' : _translate(context, 'age_unknown')),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                onPressed: () {
-                  // سيتم إضافة وظيفة النقل لمكان آخر لاحقًا
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: Text(
-                  _translate(context, 'next_step'),
                   style: const TextStyle(color: Colors.white),
                 ),
               ),

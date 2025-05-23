@@ -19,6 +19,7 @@ import 'dashboard/admin_dashboard.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
+  
   WidgetsFlutterBinding.ensureInitialized();
 
   try {

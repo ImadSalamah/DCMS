@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../providers/language_provider.dart';
 import '../loginpage.dart';
+import '../security/FaceRecognitionOnlinePage.dart';
 
 class SecurityDashboard extends StatefulWidget {
   const SecurityDashboard({super.key});
@@ -162,6 +163,27 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
     }
   }
 
+  Future<void> _signOut() async {
+    try {
+      await _auth.signOut();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      debugPrint('Error signing out: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_translate(context, 'server_error')),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   String _translate(BuildContext context, String key) {
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
@@ -205,12 +227,7 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
               onPressed: () => languageProvider.toggleLanguage(),
             ),
             IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
-              },
+              onPressed: _signOut,
               icon: const Icon(Icons.logout, color: Colors.white),
             )
           ],
@@ -279,7 +296,6 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
           padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom + 20),
           child: Column(
             children: [
-              // User info section
               Container(
                 margin: const EdgeInsets.all(20),
                 height: isSmallScreen ? 180 : 200,
@@ -364,8 +380,6 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
                   ],
                 ),
               ),
-
-              // Main feature boxes
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: GridView.count(
@@ -376,12 +390,34 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
                   mainAxisSpacing: 15,
                   childAspectRatio: 1.1,
                   children: [
-                    _buildFeatureBox(
-                      context,
-                      Icons.search,
-                      _translate(context, 'patient_search'),
-                      Colors.green,
-                      () => _navigateTo(context, '/patient_search'),
+                    GestureDetector(
+                      onTap: () {
+                        debugPrint("Patient Search tapped");
+                      },
+                      child: _buildFeatureBox(
+                        context,
+                        Icons.search,
+                        _translate(context, 'patient_search'),
+                        Colors.green,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        debugPrint("Face Recognition tapped");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const FaceRecognitionOnlinePage(),
+                          ),
+                        );
+                      },
+                      child: _buildFeatureBox(
+                        context,
+                        Icons.face,
+                        _translate(context, 'face_recognition'),
+                        Colors.blue,
+                      ),
                     ),
                   ],
                 ),
@@ -398,53 +434,48 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
     IconData icon,
     String title,
     Color color,
-    VoidCallback onTap,
   ) {
     final isSmallScreen = MediaQuery.of(context).size.width < 350;
 
     return Material(
       borderRadius: BorderRadius.circular(15),
       elevation: 3,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(15),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: isSmallScreen ? 24 : 30,
-                  color: color,
-                ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 14 : 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              child: Icon(
+                icon,
+                size: isSmallScreen ? 24 : 30,
+                color: color,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 14 : 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -526,9 +557,5 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
         ),
       ),
     );
-  }
-
-  void _navigateTo(BuildContext context, String route) {
-    Navigator.pushNamed(context, route);
   }
 }
