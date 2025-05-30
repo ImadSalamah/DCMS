@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../providers/language_provider.dart';
 import '../loginpage.dart';
-import '../security/FaceRecognitionOnlinePage.dart';
+import '../security/face_recognition_online_page.dart';
 
 class SecurityDashboard extends StatefulWidget {
   const SecurityDashboard({super.key});

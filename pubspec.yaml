@@ -30,12 +30,13 @@ dependencies:
   flutter_image_compress: ^2.0.0 # Check for web compatibility.
   cached_network_image: ^3.2.3
   camera: ^0.11.1 # Android and iOS only. Consider conditional import or platform-specific code.
-  image_picker_for_web: ^3.0.6
+  
   permission_handler: ^12.0.0+1
   path_drawing: ^1.0.0
   xml: ^6.2.0
   sqflite: ^2.2.0
   http: ^0.13.6
+  universal_html: ^2.2.1 
 
 dev_dependencies:
   flutter_test:
@@ -46,7 +47,10 @@ flutter:
   uses-material-design: true
   generate: true
 
+  
+ 
+
   assets:
-    - lib/assets/aauplogo.png
-    - lib/assets/logo1.png
-    - lib/assets/backgrownd.png
+    - ./lib/assets/aauplogo.png
+    - ./lib/assets/logo1.png
+    - ./lib/assets/backgrownd.png
