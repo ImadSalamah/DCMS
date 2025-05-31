@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class ScreeningForm extends StatefulWidget {
   final Map<String, dynamic>? patientData;
@@ -19,10 +21,13 @@ class ScreeningForm extends StatefulWidget {
 }
 
 class _ScreeningFormState extends State<ScreeningForm> {
-  final TextEditingController _chiefComplaintController = TextEditingController();
+  final TextEditingController _chiefComplaintController =
+      TextEditingController();
   final TextEditingController _medicationsController = TextEditingController();
-  final TextEditingController _positiveAnswersExplanationController = TextEditingController();
-  final TextEditingController _preventiveAdviceController = TextEditingController();
+  final TextEditingController _positiveAnswersExplanationController =
+      TextEditingController();
+  final TextEditingController _preventiveAdviceController =
+      TextEditingController();
 
   late Map<String, int> medicalHistory;
   late Map<String, bool> healthProblems;
@@ -74,7 +79,8 @@ class _ScreeningFormState extends State<ScreeningForm> {
     };
 
     dentalHistory = {
-      'Have you had any serious problem(s) with any previous dental treatment?': 0,
+      'Have you had any serious problem(s) with any previous dental treatment?':
+          0,
       'Have you ever had an injury to your face, jaw, or teeth?': 0,
       'Do you ever feel like you have a dry mouth?': 0,
       'Have you ever had an unusual reaction to local anesthetic?': 0,
@@ -105,7 +111,8 @@ class _ScreeningFormState extends State<ScreeningForm> {
     setState(() {
       _chiefComplaintController.text = data['chiefComplaint'] ?? '';
       _medicationsController.text = data['medications'] ?? '';
-      _positiveAnswersExplanationController.text = data['positiveAnswersExplanation'] ?? '';
+      _positiveAnswersExplanationController.text =
+          data['positiveAnswersExplanation'] ?? '';
       _preventiveAdviceController.text = data['preventiveAdvice'] ?? '';
 
       if (data['medicalHistory'] != null) {
@@ -124,7 +131,8 @@ class _ScreeningFormState extends State<ScreeningForm> {
         categories = List<Map<String, dynamic>>.from(data['categories']);
       }
 
-      _medicationRequiredBeforeDental = data['medicationRequiredBeforeDental'] ?? 0;
+      _medicationRequiredBeforeDental =
+          data['medicationRequiredBeforeDental'] ?? 0;
       _smokeOrTobacco = data['smokeOrTobacco'] ?? 0;
     });
   }
@@ -219,29 +227,61 @@ class _ScreeningFormState extends State<ScreeningForm> {
   }
 
   Widget _buildSection(String title, List<Widget> children) => Card(
-    margin: const EdgeInsets.only(bottom: 16),
-    child: Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.right,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.right,
+              ),
+              const SizedBox(height: 8),
+              ...children,
+            ],
           ),
-          const SizedBox(height: 8),
-          ...children,
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
-  void _submitForm() {
+  Future<void> _saveScreeningToDatabase() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب تسجيل الدخول أولاً')),
+      );
+      return;
+    }
+    final doctorId = user.uid;
+    final patientId =
+        widget.patientData != null && widget.patientData!['id'] != null
+            ? widget.patientData!['id']
+            : null;
+    if (patientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لا يوجد معرف للمريض')),
+      );
+      return;
+    }
+    final formData = _collectFormData();
+    final data = {
+      'doctorId': doctorId,
+      'patientId': patientId,
+      'screening': formData,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    final dbRef = FirebaseDatabase.instance.ref();
+    await dbRef.child('examinations').child('examinations').push().set(data);
+  }
+
+  void _submitForm() async {
     final formData = _collectFormData();
     if (widget.onSave != null) {
       widget.onSave!(formData);
     }
+    await _saveScreeningToDatabase();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('تم حفظ بيانات الفحص المبدئي')),
     );
@@ -266,50 +306,50 @@ class _ScreeningFormState extends State<ScreeningForm> {
           ]),
           _buildSection('Medical History', [
             ...medicalHistory.entries.map((entry) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(entry.key),
-                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: RadioListTile<int>(
-                        title: const Text('Yes'),
-                        value: 1,
-                        groupValue: entry.value,
-                        onChanged: (value) {
-                          setState(() {
-                            medicalHistory[entry.key] = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<int>(
-                        title: const Text('No'),
-                        value: 0,
-                        groupValue: entry.value,
-                        onChanged: (value) {
-                          setState(() {
-                            medicalHistory[entry.key] = value!;
-                          });
-                        },
-                      ),
+                    Text(entry.key),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<int>(
+                            title: const Text('Yes'),
+                            value: 1,
+                            groupValue: entry.value,
+                            onChanged: (value) {
+                              setState(() {
+                                medicalHistory[entry.key] = value!;
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<int>(
+                            title: const Text('No'),
+                            value: 0,
+                            groupValue: entry.value,
+                            onChanged: (value) {
+                              setState(() {
+                                medicalHistory[entry.key] = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
-            )),
+                )),
           ]),
           _buildSection('Health Problems', [
             ...healthProblems.entries.map((entry) => CheckboxListTile(
-              title: Text(entry.key),
-              value: entry.value,
-              onChanged: (value) {
-                setState(() {
-                  healthProblems[entry.key] = value!;
-                });
-              },
-            )),
+                  title: Text(entry.key),
+                  value: entry.value,
+                  onChanged: (value) {
+                    setState(() {
+                      healthProblems[entry.key] = value!;
+                    });
+                  },
+                )),
           ]),
           _buildSection('Please Explain any Positive Answers', [
             TextField(
@@ -331,36 +371,38 @@ class _ScreeningFormState extends State<ScreeningForm> {
               maxLines: 3,
             ),
           ]),
-          _buildSection('Are you taking any medication required before dental treatment?', [
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<int>(
-                    title: const Text('Yes'),
-                    value: 1,
-                    groupValue: _medicationRequiredBeforeDental,
-                    onChanged: (value) {
-                      setState(() {
-                        _medicationRequiredBeforeDental = value!;
-                      });
-                    },
-                  ),
+          _buildSection(
+              'Are you taking any medication required before dental treatment?',
+              [
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<int>(
+                        title: const Text('Yes'),
+                        value: 1,
+                        groupValue: _medicationRequiredBeforeDental,
+                        onChanged: (value) {
+                          setState(() {
+                            _medicationRequiredBeforeDental = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<int>(
+                        title: const Text('No'),
+                        value: 0,
+                        groupValue: _medicationRequiredBeforeDental,
+                        onChanged: (value) {
+                          setState(() {
+                            _medicationRequiredBeforeDental = value!;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: RadioListTile<int>(
-                    title: const Text('No'),
-                    value: 0,
-                    groupValue: _medicationRequiredBeforeDental,
-                    onChanged: (value) {
-                      setState(() {
-                        _medicationRequiredBeforeDental = value!;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ]),
+              ]),
           _buildSection('Do you smoke or use tobacco in any form?', [
             Row(
               children: [
@@ -393,61 +435,63 @@ class _ScreeningFormState extends State<ScreeningForm> {
           ]),
           _buildSection('Dental History', [
             ...dentalHistory.entries.map((entry) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(entry.key),
-                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: RadioListTile<int>(
-                        title: const Text('Yes'),
-                        value: 1,
-                        groupValue: entry.value,
-                        onChanged: (value) {
-                          setState(() {
-                            dentalHistory[entry.key] = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<int>(
-                        title: const Text('No'),
-                        value: 0,
-                        groupValue: entry.value,
-                        onChanged: (value) {
-                          setState(() {
-                            dentalHistory[entry.key] = value!;
-                          });
-                        },
-                      ),
+                    Text(entry.key),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<int>(
+                            title: const Text('Yes'),
+                            value: 1,
+                            groupValue: entry.value,
+                            onChanged: (value) {
+                              setState(() {
+                                dentalHistory[entry.key] = value!;
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<int>(
+                            title: const Text('No'),
+                            value: 0,
+                            groupValue: entry.value,
+                            onChanged: (value) {
+                              setState(() {
+                                dentalHistory[entry.key] = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
-            )),
+                )),
           ]),
           _buildSection('Oral Health Assessment', [
             ...categories.map((category) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(category['name']),
-                Row(
-                  children: List.generate(3, (index) => Expanded(
-                    child: RadioListTile<int>(
-                      title: Text('$index'),
-                      value: index,
-                      groupValue: category['score'],
-                      onChanged: (value) {
-                        setState(() {
-                          category['score'] = value!;
-                        });
-                      },
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(category['name']),
+                    Row(
+                      children: List.generate(
+                          3,
+                          (index) => Expanded(
+                                child: RadioListTile<int>(
+                                  title: Text('$index'),
+                                  value: index,
+                                  groupValue: category['score'],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      category['score'] = value!;
+                                    });
+                                  },
+                                ),
+                              )),
                     ),
-                  )),
-                ),
-              ],
-            )),
+                  ],
+                )),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16.0),

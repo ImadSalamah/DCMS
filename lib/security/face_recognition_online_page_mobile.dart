@@ -54,8 +54,9 @@ class _FaceRecognitionOnlinePageState extends State<FaceRecognitionOnlinePage> {
 
   void _startMobileFrameStream() {
     Future.doWhile(() async {
-      if (!mounted || !_isCameraInitialized || _cameraController == null)
+      if (!mounted || !_isCameraInitialized || _cameraController == null) {
         return false;
+      }
       try {
         final XFile file = await _cameraController!.takePicture();
         final bytes = await file.readAsBytes();

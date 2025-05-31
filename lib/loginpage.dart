@@ -7,9 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../SignupPage.dart';
+import 'signup_page.dart';
 import '../providers/language_provider.dart';
 import 'main.dart'; // Import for navigatorKey
+import 'PendingPatientPage.dart';
 
 enum UserRole { patient, dental_student, doctor, secretary, admin, security }
 
@@ -201,6 +202,27 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handlePatientLogin(LanguageProvider languageProvider) async {
     final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
+
+    // تحقق أولاً إذا كان المريض في pendingUsers
+    final pendingSnapshot = await _dbRef
+        .child('pendingUsers')
+        .orderByChild('email')
+        .equalTo(email)
+        .once();
+
+    if (pendingSnapshot.snapshot.value != null) {
+      // إذا كان في pendingUsers، اسمح له بالدخول لكن أظهر له صفحة خاصة
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PendingPatientPage(),
+          settings: RouteSettings(arguments: email),
+        ),
+      );
+      return;
+    }
 
     final patientData = await _checkUserExists(email);
     if (patientData == null) {
@@ -452,138 +474,267 @@ class _LoginPageState extends State<LoginPage> {
             backgroundColor: Colors.white,
             body: Center(
               child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 8),
-                      color: primaryColor,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _translate(context, 'app_name'),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16, // أصغر قليلاً
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                child: Container(
+                  width: double.infinity,
+                  decoration: isWeb
+                      ? BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              primaryColor,
+                              accentColor.withOpacity(0.7),
+                              Colors.white.withOpacity(0.7),
+                            ],
                           ),
-                          IconButton(
-                            icon:
-                                const Icon(Icons.language, color: Colors.white),
-                            onPressed: () => languageProvider.toggleLanguage(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(isWeb ? 40.0 : 24.0),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: isWeb ? 420 : double.infinity,
-                          ),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 20),
-                                Image.asset(
-                                  "lib/assets/aauplogo.png",
-                                  width: isWeb
-                                      ? 300
-                                      : 120, // تكبير اللوجو للشاشات الكبيرة
+                        )
+                      : null,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 8),
+                        color: primaryColor,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _translate(context, 'app_name'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16, // أصغر قليلاً
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(height: 30),
-                                Container(
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    border:
-                                        Border.all(color: Colors.grey.shade300),
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: isWeb ? Colors.white : null,
-                                    boxShadow: isWeb
-                                        ? [
-                                            BoxShadow(
-                                              color: Colors.black12,
-                                              blurRadius: 12,
-                                              offset: Offset(0, 4),
-                                            ),
-                                          ]
-                                        : [],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.language,
+                                  color: Colors.white),
+                              onPressed: () =>
+                                  languageProvider.toggleLanguage(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(isWeb ? 40.0 : 24.0),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isWeb ? 420 : double.infinity,
+                            ),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 20),
+                                  Image.asset(
+                                    "lib/assets/aauplogo.png",
+                                    width: isWeb
+                                        ? 450
+                                        : 200, // تكبير اللوجو للشاشات الكبيرة
                                   ),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: ChoiceChip(
-                                              label: Text(_translate(
-                                                  context, 'patient')),
-                                              selected: _isPatient,
-                                              selectedColor: primaryColor,
-                                              labelStyle: TextStyle(
-                                                color: _isPatient
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                  const SizedBox(height: 30),
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: isWeb ? Colors.white : null,
+                                      boxShadow: isWeb
+                                          ? [
+                                              const BoxShadow(
+                                                color: Colors.black12,
+                                                blurRadius: 12,
+                                                offset: Offset(0, 4),
                                               ),
-                                              onSelected: (_) => setState(() {
-                                                _isPatient = true;
-                                                _usernameController
-                                                    .clear(); // مسح اسم المستخدم عند اختيار مريض
-                                              }),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: ChoiceChip(
-                                              label: Text(
-                                                  _translate(context, 'staff')),
-                                              selected: !_isPatient,
-                                              selectedColor: primaryColor,
-                                              labelStyle: TextStyle(
-                                                color: !_isPatient
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                            ]
+                                          : [],
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: ChoiceChip(
+                                                label: Text(_translate(
+                                                    context, 'patient')),
+                                                selected: _isPatient,
+                                                selectedColor: primaryColor,
+                                                labelStyle: TextStyle(
+                                                  color: _isPatient
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                                ),
+                                                onSelected: (_) => setState(() {
+                                                  _isPatient = true;
+                                                  _usernameController
+                                                      .clear(); // مسح اسم المستخدم عند اختيار مريض
+                                                }),
                                               ),
-                                              onSelected: (_) => setState(() {
-                                                _isPatient = false;
-                                                _emailController
-                                                    .clear(); // مسح الإيميل عند اختيار موظف/طبيب
-                                              }),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 30),
-                                      Text(
-                                        _translate(context, 'login'),
-                                        style: TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color: primaryColor,
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: ChoiceChip(
+                                                label: Text(_translate(
+                                                    context, 'staff')),
+                                                selected: !_isPatient,
+                                                selectedColor: primaryColor,
+                                                labelStyle: TextStyle(
+                                                  color: !_isPatient
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                                ),
+                                                onSelected: (_) => setState(() {
+                                                  _isPatient = false;
+                                                  _emailController
+                                                      .clear(); // مسح الإيميل عند اختيار موظف/طبيب
+                                                }),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 20),
-                                      if (_isPatient) ...[
+                                        const SizedBox(height: 30),
+                                        Text(
+                                          _translate(context, 'login'),
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: primaryColor,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        if (_isPatient) ...[
+                                          TextFormField(
+                                            controller: _emailController,
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            decoration: InputDecoration(
+                                              labelText:
+                                                  _translate(context, 'email'),
+                                              prefixIcon: Icon(
+                                                  Icons.email_outlined,
+                                                  color: accentColor),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.grey.shade400),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                borderSide: BorderSide(
+                                                    color: primaryColor,
+                                                    width: 2),
+                                              ),
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.isEmpty) {
+                                                return languageProvider
+                                                        .isEnglish
+                                                    ? 'Please enter email'
+                                                    : 'الرجاء إدخال البريد الإلكتروني';
+                                              }
+                                              if (!value.contains('@')) {
+                                                return languageProvider
+                                                        .isEnglish
+                                                    ? 'Please enter a valid email'
+                                                    : 'الرجاء إدخال بريد إلكتروني صحيح';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 20),
+                                        ],
+                                        if (!_isPatient)
+                                          Column(
+                                            children: [
+                                              TextFormField(
+                                                controller: _usernameController,
+                                                decoration: InputDecoration(
+                                                  labelText: _translate(
+                                                      context, 'username'),
+                                                  prefixIcon: Icon(
+                                                      Icons.person_outline,
+                                                      color: accentColor),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    borderSide: BorderSide(
+                                                        color: Colors
+                                                            .grey.shade400),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    borderSide: BorderSide(
+                                                        color: primaryColor,
+                                                        width: 2),
+                                                  ),
+                                                ),
+                                                validator: (value) {
+                                                  if (value == null ||
+                                                      value.isEmpty) {
+                                                    return languageProvider
+                                                            .isEnglish
+                                                        ? 'Please enter username'
+                                                        : 'الرجاء إدخال اسم المستخدم';
+                                                  }
+                                                  if (value.contains(' ')) {
+                                                    return languageProvider
+                                                            .isEnglish
+                                                        ? 'Username cannot contain spaces'
+                                                        : 'اسم المستخدم لا يمكن أن يحتوي على مسافات';
+                                                  }
+                                                  return null;
+                                                },
+                                              ),
+                                              const SizedBox(height: 5),
+                                              // Align(
+                                              //   alignment: Alignment.centerLeft,
+                                              //   child: TextButton(
+                                              //     onPressed: _handleForgotPassword,
+                                              //     child: Text(
+                                              //       _translate(context, 'forgot_password'),
+                                              //       style: TextStyle(color: accentColor),
+                                              //     ),
+                                              //   ),
+                                              // ),
+                                            ],
+                                          ),
+                                        const SizedBox(height: 20),
                                         TextFormField(
-                                          controller: _emailController,
-                                          keyboardType:
-                                              TextInputType.emailAddress,
+                                          controller: _passwordController,
+                                          obscureText: _obscurePassword,
                                           decoration: InputDecoration(
                                             labelText:
-                                                _translate(context, 'email'),
-                                            prefixIcon: Icon(
-                                                Icons.email_outlined,
+                                                _translate(context, 'password'),
+                                            prefixIcon: Icon(Icons.lock_outline,
                                                 color: accentColor),
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                _obscurePassword
+                                                    ? Icons.visibility_off
+                                                    : Icons.visibility,
+                                                color: accentColor,
+                                              ),
+                                              onPressed: () => setState(() =>
+                                                  _obscurePassword =
+                                                      !_obscurePassword),
+                                            ),
                                             border: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
@@ -602,262 +753,163 @@ class _LoginPageState extends State<LoginPage> {
                                             if (value == null ||
                                                 value.isEmpty) {
                                               return languageProvider.isEnglish
-                                                  ? 'Please enter email'
-                                                  : 'الرجاء إدخال البريد الإلكتروني';
+                                                  ? 'Please enter password'
+                                                  : 'الرجاء إدخال كلمة المرور';
                                             }
-                                            if (!value.contains('@')) {
+                                            if (value.length < 6) {
                                               return languageProvider.isEnglish
-                                                  ? 'Please enter a valid email'
-                                                  : 'الرجاء إدخال بريد إلكتروني صحيح';
+                                                  ? 'Password must be at least 6 characters'
+                                                  : 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
                                             }
                                             return null;
                                           },
                                         ),
                                         const SizedBox(height: 20),
-                                      ],
-                                      if (!_isPatient)
-                                        Column(
+                                        Row(
                                           children: [
-                                            TextFormField(
-                                              controller: _usernameController,
-                                              decoration: InputDecoration(
-                                                labelText: _translate(
-                                                    context, 'username'),
-                                                prefixIcon: Icon(
-                                                    Icons.person_outline,
-                                                    color: accentColor),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  borderSide: BorderSide(
-                                                      color:
-                                                          Colors.grey.shade400),
-                                                ),
-                                                focusedBorder:
-                                                    OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  borderSide: BorderSide(
-                                                      color: primaryColor,
-                                                      width: 2),
+                                            Checkbox(
+                                              value: _rememberMe,
+                                              onChanged: (value) => setState(
+                                                  () => _rememberMe = value!),
+                                              activeColor: primaryColor,
+                                            ),
+                                            Flexible(
+                                              flex: 2,
+                                              child: Text(
+                                                _translate(
+                                                    context, 'remember_me'),
+                                                style: TextStyle(
+                                                    color: primaryColor,
+                                                    fontSize: 14),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (_isPatient) ...[
+                                              const SizedBox(
+                                                  width:
+                                                      16), // زيادة المسافة بين تذكرني ونسيت كلمة المرور
+                                              Flexible(
+                                                flex: 3,
+                                                child: Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: TextButton(
+                                                    onPressed:
+                                                        _handleForgotPassword,
+                                                    style: TextButton.styleFrom(
+                                                        padding:
+                                                            EdgeInsets.zero),
+                                                    child: Text(
+                                                      _translate(context,
+                                                          'forgot_password'),
+                                                      style: TextStyle(
+                                                          color: accentColor,
+                                                          fontSize: 14),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                              validator: (value) {
-                                                if (value == null ||
-                                                    value.isEmpty) {
-                                                  return languageProvider
-                                                          .isEnglish
-                                                      ? 'Please enter username'
-                                                      : 'الرجاء إدخال اسم المستخدم';
-                                                }
-                                                if (value.contains(' ')) {
-                                                  return languageProvider
-                                                          .isEnglish
-                                                      ? 'Username cannot contain spaces'
-                                                      : 'اسم المستخدم لا يمكن أن يحتوي على مسافات';
-                                                }
-                                                return null;
-                                              },
-                                            ),
-                                            const SizedBox(height: 5),
-                                            // Align(
-                                            //   alignment: Alignment.centerLeft,
-                                            //   child: TextButton(
-                                            //     onPressed: _handleForgotPassword,
-                                            //     child: Text(
-                                            //       _translate(context, 'forgot_password'),
-                                            //       style: TextStyle(color: accentColor),
-                                            //     ),
-                                            //   ),
-                                            // ),
+                                            ],
                                           ],
                                         ),
-                                      const SizedBox(height: 20),
-                                      TextFormField(
-                                        controller: _passwordController,
-                                        obscureText: _obscurePassword,
-                                        decoration: InputDecoration(
-                                          labelText:
-                                              _translate(context, 'password'),
-                                          prefixIcon: Icon(Icons.lock_outline,
-                                              color: accentColor),
-                                          suffixIcon: IconButton(
-                                            icon: Icon(
-                                              _obscurePassword
-                                                  ? Icons.visibility_off
-                                                  : Icons.visibility,
-                                              color: accentColor,
+                                        const SizedBox(height: 20),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            onPressed: _isLoading
+                                                ? null
+                                                : () => _handleLogin(context),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: primaryColor,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 16),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
                                             ),
-                                            onPressed: () => setState(() =>
-                                                _obscurePassword =
-                                                    !_obscurePassword),
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey.shade400),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                                color: primaryColor, width: 2),
+                                            child: _isLoading
+                                                ? const CircularProgressIndicator(
+                                                    color: Colors.white)
+                                                : Text(
+                                                    _translate(context,
+                                                        'login_button'),
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
                                           ),
                                         ),
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return languageProvider.isEnglish
-                                                ? 'Please enter password'
-                                                : 'الرجاء إدخال كلمة المرور';
-                                          }
-                                          if (value.length < 6) {
-                                            return languageProvider.isEnglish
-                                                ? 'Password must be at least 6 characters'
-                                                : 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 20),
-                                      Row(
-                                        children: [
-                                          Checkbox(
-                                            value: _rememberMe,
-                                            onChanged: (value) => setState(
-                                                () => _rememberMe = value!),
-                                            activeColor: primaryColor,
-                                          ),
-                                          Flexible(
-                                            flex: 2,
+                                        if (_isPatient) ...[
+                                          const SizedBox(height: 15),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const SignUpPage()),
+                                              );
+                                            },
                                             child: Text(
                                               _translate(
-                                                  context, 'remember_me'),
+                                                  context, 'create_account'),
                                               style: TextStyle(
-                                                  color: primaryColor,
-                                                  fontSize: 14),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          if (_isPatient) ...[
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              flex: 3,
-                                              child: Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: TextButton(
-                                                  onPressed:
-                                                      _handleForgotPassword,
-                                                  style: TextButton.styleFrom(
-                                                      padding: EdgeInsets.zero),
-                                                  child: Text(
-                                                    _translate(context,
-                                                        'forgot_password'),
-                                                    style: TextStyle(
-                                                        color: accentColor,
-                                                        fontSize: 14),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
+                                                fontSize: 16,
+                                                color: primaryColor,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                          ],
+                                          ),
                                         ],
-                                      ),
-                                      const SizedBox(height: 20),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: _isLoading
-                                              ? null
-                                              : () => _handleLogin(context),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: primaryColor,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 16),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: _isLoading
-                                              ? const CircularProgressIndicator(
-                                                  color: Colors.white)
-                                              : Text(
-                                                  _translate(
-                                                      context, 'login_button'),
-                                                  style: const TextStyle(
-                                                    fontSize: 18,
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                      if (_isPatient) ...[
-                                        const SizedBox(height: 15),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const SignUpPage()),
-                                            );
-                                          },
-                                          child: Text(
-                                            _translate(
-                                                context, 'create_account'),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: primaryColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
                                       ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 40),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      IconButton(
+                                        icon: const FaIcon(
+                                            FontAwesomeIcons.facebook),
+                                        onPressed: () => launchUrl(Uri.parse(
+                                            "https://www.facebook.com/aaup.edu")),
+                                        color: Colors.blue[800],
+                                      ),
+                                      const SizedBox(width: 10),
+                                      IconButton(
+                                        icon: const FaIcon(
+                                            FontAwesomeIcons.linkedin),
+                                        onPressed: () => launchUrl(Uri.parse(
+                                            "https://www.linkedin.com/school/arabamericanuniversity")),
+                                        color: Colors.blue[700],
+                                      ),
+                                      const SizedBox(width: 10),
+                                      IconButton(
+                                        icon: const FaIcon(
+                                            FontAwesomeIcons.instagram),
+                                        onPressed: () => launchUrl(Uri.parse(
+                                            "https://www.instagram.com/Aaup_edu")),
+                                        color: Colors.pinkAccent,
+                                      ),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(height: 40),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const FaIcon(
-                                          FontAwesomeIcons.facebook),
-                                      onPressed: () => launchUrl(Uri.parse(
-                                          "https://www.facebook.com/aaup.edu")),
-                                      color: Colors.blue[800],
-                                    ),
-                                    const SizedBox(width: 10),
-                                    IconButton(
-                                      icon: const FaIcon(
-                                          FontAwesomeIcons.linkedin),
-                                      onPressed: () => launchUrl(Uri.parse(
-                                          "https://www.linkedin.com/school/arabamericanuniversity")),
-                                      color: Colors.blue[700],
-                                    ),
-                                    const SizedBox(width: 10),
-                                    IconButton(
-                                      icon: const FaIcon(
-                                          FontAwesomeIcons.instagram),
-                                      onPressed: () => launchUrl(Uri.parse(
-                                          "https://www.instagram.com/Aaup_edu")),
-                                      color: Colors.pinkAccent,
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

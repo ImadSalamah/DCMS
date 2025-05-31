@@ -6,10 +6,10 @@ class AdminManageGroupsPage extends StatefulWidget {
   const AdminManageGroupsPage({super.key});
 
   @override
-  _AdminManageGroupsPageState createState() => _AdminManageGroupsPageState();
+  AdminManageGroupsPageState createState() => AdminManageGroupsPageState();
 }
 
-class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
+class AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -31,8 +31,16 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
     'Oral Surgery (080114142)'
   ];
 
-  final List<String> _clinics = List.generate(11, (index) => 'Clinic ${String.fromCharCode(65 + index)}');
-  final List<String> _days = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+  final List<String> _clinics =
+      List.generate(11, (index) => 'Clinic ${String.fromCharCode(65 + index)}');
+  final List<String> _days = [
+    'السبت',
+    'الأحد',
+    'الإثنين',
+    'الثلاثاء',
+    'الأربعاء',
+    'الخميس'
+  ];
   List<Map<String, dynamic>> _doctors = [];
   List<Map<String, dynamic>> _allStudents = [];
   List<Map<String, dynamic>> _filteredStudents = [];
@@ -56,7 +64,11 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
 
   Future<void> _loadDoctors() async {
     try {
-      final snapshot = await _dbRef.child('users').orderByChild('role').equalTo('doctor').get();
+      final snapshot = await _dbRef
+          .child('users')
+          .orderByChild('role')
+          .equalTo('doctor')
+          .get();
       if (snapshot.exists) {
         setState(() {
           _doctors = [];
@@ -71,7 +83,7 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
         });
       }
     } catch (e) {
-      print('Error loading doctors: $e');
+      debugPrint('Error loading doctors: $e');
     }
   }
 
@@ -96,7 +108,7 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
         });
       }
     } catch (e) {
-      print('Error loading students: $e');
+      debugPrint('Error loading students: $e');
     }
   }
 
@@ -162,7 +174,8 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
       );
 
       _selectedDays = List<String>.from(group['days']);
-      _selectedStudents = List<String>.from((group['students'] as Map).keys.toList());
+      _selectedStudents =
+          List<String>.from((group['students'] as Map).keys.toList());
       _groupNumber = group['groupNumber'];
       _groupNumberController.text = _groupNumber ?? '';
     });
@@ -173,6 +186,7 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
       _formKey.currentState!.save();
 
       if (_selectedDays.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('يجب اختيار يوم واحد على الأقل')),
         );
@@ -180,6 +194,7 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
       }
 
       if (_selectedStudents.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('يجب اختيار طالب واحد على الأقل')),
         );
@@ -187,6 +202,7 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
       }
 
       if (_groupNumberController.text.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('يجب إدخال رقم الشعبة')),
         );
@@ -197,7 +213,8 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
         final user = _auth.currentUser;
         if (user == null) return;
 
-        final doctor = _doctors.firstWhere((doc) => doc['id'] == _selectedDoctorId);
+        final doctor =
+            _doctors.firstWhere((doc) => doc['id'] == _selectedDoctorId);
 
         // تحويل الطلاب المختارين إلى Map باستخدام uid
         final studentsMap = {};
@@ -212,11 +229,14 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
 
         final groupData = {
           'courseName': _selectedCourse,
-          'courseId': _selectedCourse!.split('(').last.replaceAll(')', '').trim(),
+          'courseId':
+              _selectedCourse!.split('(').last.replaceAll(')', '').trim(),
           'doctorId': _selectedDoctorId,
           'doctorName': doctor['name'],
-          'startTime': '${_startTime!.hour}:${_startTime!.minute.toString().padLeft(2, '0')}',
-          'endTime': '${_endTime!.hour}:${_endTime!.minute.toString().padLeft(2, '0')}',
+          'startTime':
+              '${_startTime!.hour}:${_startTime!.minute.toString().padLeft(2, '0')}',
+          'endTime':
+              '${_endTime!.hour}:${_endTime!.minute.toString().padLeft(2, '0')}',
           'clinic': _selectedClinic,
           'days': _selectedDays,
           'students': studentsMap,
@@ -232,15 +252,18 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
           await _dbRef.child('studyGroups/$_editingGroupId').update(groupData);
         }
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_editingGroupId == null
-              ? 'تم إنشاء الشعبة بنجاح'
-              : 'تم تحديث الشعبة بنجاح')),
+          SnackBar(
+              content: Text(_editingGroupId == null
+                  ? 'تم إنشاء الشعبة بنجاح'
+                  : 'تم تحديث الشعبة بنجاح')),
         );
 
         // إعادة تعيين الحقول
         _resetForm();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ في الحفظ: $e')),
         );
@@ -251,10 +274,12 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
   Future<void> _deleteGroup(String groupId) async {
     try {
       await _dbRef.child('studyGroups/$groupId').remove();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم حذف الشعبة بنجاح')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('خطأ في الحذف: $e')),
       );
@@ -457,25 +482,27 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
                 child: _filteredStudents.isEmpty
                     ? const Center(child: Text('لا توجد نتائج'))
                     : ListView.builder(
-                  itemCount: _filteredStudents.length,
-                  itemBuilder: (context, index) {
-                    final student = _filteredStudents[index];
-                    return CheckboxListTile(
-                      title: Text('${student['name']}'),
-                      subtitle: Text('${student['studentId']} - ${student['email']}'),
-                      value: _selectedStudents.contains(student['id']),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value == true) {
-                            _selectedStudents.add(student['id'] as String);
-                          } else {
-                            _selectedStudents.remove(student['id']);
-                          }
-                        });
-                      },
-                    );
-                  },
-                ),
+                        itemCount: _filteredStudents.length,
+                        itemBuilder: (context, index) {
+                          final student = _filteredStudents[index];
+                          return CheckboxListTile(
+                            title: Text('${student['name']}'),
+                            subtitle: Text(
+                                '${student['studentId']} - ${student['email']}'),
+                            value: _selectedStudents.contains(student['id']),
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedStudents
+                                      .add(student['id'] as String);
+                                } else {
+                                  _selectedStudents.remove(student['id']);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
               ),
 
               const SizedBox(height: 30),
@@ -486,16 +513,20 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
                   ElevatedButton(
                     onPressed: _saveGroup,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 15),
                     ),
-                    child: Text(_editingGroupId == null ? 'إنشاء شعبة' : 'تحديث الشعبة'),
+                    child: Text(_editingGroupId == null
+                        ? 'إنشاء شعبة'
+                        : 'تحديث الشعبة'),
                   ),
                   if (_editingGroupId != null)
                     ElevatedButton(
                       onPressed: _resetForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey,
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 15),
                       ),
                       child: const Text('إلغاء'),
                     ),
@@ -517,7 +548,8 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final data = snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
+                  final data =
+                      snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
                   if (data == null || data.isEmpty) {
                     return const Center(child: Text('لا توجد شعب مسجلة'));
                   }
@@ -532,17 +564,20 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 16),
                         child: ExpansionTile(
-                          title: Text('الشعبة ${group['groupNumber']} - ${group['courseName']}'),
+                          title: Text(
+                              'الشعبة ${group['groupNumber']} - ${group['courseName']}'),
                           subtitle: Text('بإشراف د. ${group['doctorName']}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                icon:
+                                    const Icon(Icons.edit, color: Colors.blue),
                                 onPressed: () => _editGroup(group, key),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _deleteGroup(key),
                               ),
                             ],
@@ -553,15 +588,23 @@ class _AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('الوقت: ${group['startTime']} - ${group['endTime']}'),
-                                  Text('الأيام: ${(group['days'] as List?)?.join('، ') ?? 'غير محدد'}'),
+                                  Text(
+                                      'الوقت: ${group['startTime']} - ${group['endTime']}'),
+                                  Text(
+                                      'الأيام: ${(group['days'] as List?)?.join('، ') ?? 'غير محدد'}'),
                                   Text('العيادة: ${group['clinic']}'),
                                   const SizedBox(height: 10),
-                                  const Text('الطلاب:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  ...(group['students'] as Map? ?? {}).values.map<Widget>((student) {
+                                  const Text('الطلاب:',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  ...(group['students'] as Map? ?? {})
+                                      .values
+                                      .map<Widget>((student) {
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4),
-                                      child: Text(' - ${student['name']} (${student['studentId']})'),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 4),
+                                      child: Text(
+                                          ' - ${student['name']} (${student['studentId']})'),
                                     );
                                   }),
                                 ],

@@ -186,7 +186,7 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
                             child: InputDecorator(
                               decoration: InputDecoration(
                                 labelText: 'Birth Date *',
-                                labelStyle: TextStyle(color: primaryColor.withOpacity(0.8)),
+                                labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
                                 prefixIcon: Icon(Icons.calendar_today, color: accentColor),
                                 filled: true,
                                 fillColor: Colors.grey[50],
@@ -458,7 +458,7 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
       enabled: enabled,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: primaryColor.withOpacity(0.8)),
+        labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
@@ -541,6 +541,7 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
   Future<void> _pickImage() async {
     try {
       if (!await _checkPermissions()) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Gallery access denied')),
         );
@@ -560,7 +561,8 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
           setState(() => _profileImage = bytes);
         } else {
           final bytes = await File(image.path).readAsBytes();
-          final compressedImage = await FlutterImageCompress.compressWithList(
+          // Remove unused compressedImage variable
+          await FlutterImageCompress.compressWithList(
             bytes,
             minWidth: 800,
             minHeight: 800,
@@ -570,10 +572,12 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
         }
       }
     } on PlatformException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image upload error: ${e.message}')),
+        SnackBar(content: Text('Image upload error: [${e.message}')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Image upload error: $e')),
       );
@@ -701,6 +705,7 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
         const SnackBar(content: Text('Student added successfully')),
       );
 
+      if (!mounted) return;
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'Error adding student';

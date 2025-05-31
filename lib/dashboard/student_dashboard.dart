@@ -18,7 +18,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   final Color accentColor = const Color(0xFF4AB8D8);
   final FirebaseAuth _auth = FirebaseAuth.instance;
   late DatabaseReference _userRef;
-  late DatabaseReference _patientsRef;
   late DatabaseReference _notificationsRef;
 
   String _userName = '';
@@ -64,7 +63,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       _userRef = FirebaseDatabase.instance.ref('users/${user.uid}');
       _notificationsRef = FirebaseDatabase.instance.ref('notifications/${user.uid}');
     }
-    _patientsRef = FirebaseDatabase.instance.ref('patients');
   }
 
   void _setupRealtimeListener() {
@@ -181,6 +179,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   Future<void> _logout() async {
     await _auth.signOut();
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -318,7 +317,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           _userImageUrl.isNotEmpty
                               ? CircleAvatar(
                             radius: isSmallScreen ? 30 : 40,
-                            backgroundColor: Colors.white.withOpacity(0.8),
+                            backgroundColor: Colors.white.withAlpha((0.8 * 255).toInt()),
                             child: ClipOval(
                               child: Image.memory(
                                 base64Decode(_userImageUrl.replaceFirst('data:image/jpeg;base64,', '')),
@@ -330,7 +329,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           )
                               : CircleAvatar(
                             radius: isSmallScreen ? 30 : 40,
-                            backgroundColor: Colors.white.withOpacity(0.8),
+                            backgroundColor: Colors.white.withAlpha((0.8 * 255).toInt()),
                             child: Icon(
                               Icons.person,
                               size: isSmallScreen ? 30 : 40,
@@ -486,7 +485,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withAlpha((0.1 * 255).toInt()),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

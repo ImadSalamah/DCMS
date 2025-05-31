@@ -137,6 +137,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
     try {
       final user = _auth.currentUser;
       if (user == null) {
+        if (!mounted) return;
         setState(() {
           _patientName = _translate(context, 'patient');
           _isLoading = false;
@@ -147,6 +148,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
       final snapshot = await _patientRef.get();
 
       if (!snapshot.exists) {
+        if (!mounted) return;
         setState(() {
           _patientName = _translate(context, 'patient');
           _isLoading = false;
@@ -155,9 +157,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
       }
 
       final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      if (!mounted) return;
       _updatePatientData(data);
     } catch (e) {
       debugPrint('Error loading patient data: $e');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _hasError = true;
@@ -175,9 +179,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
   Future<void> _signOut() async {
     try {
       await _auth.signOut();
+      if (!mounted) return;
       _redirectToLogin();
     } catch (e) {
       debugPrint('Error signing out: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_translate(context, 'logout_error')),
@@ -374,7 +380,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                     ? CircleAvatar(
                                         radius: isSmallScreen ? 30 : 40,
                                         backgroundColor:
-                                            Colors.white.withOpacity(0.8),
+                                            Colors.white.withValues(alpha: 0.8),
                                         child: ClipOval(
                                           child: Image.memory(
                                             base64.decode(
@@ -389,7 +395,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                     : CircleAvatar(
                                         radius: isSmallScreen ? 30 : 40,
                                         backgroundColor:
-                                            Colors.white.withOpacity(0.8),
+                                            Colors.white.withValues(alpha: 0.8),
                                         child: Icon(
                                           Icons.person,
                                           size: isSmallScreen ? 30 : 40,
@@ -516,7 +522,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                               ? CircleAvatar(
                                   radius: isSmallScreen ? 30 : 40,
                                   backgroundColor:
-                                      Colors.white.withOpacity(0.8),
+                                      Colors.white.withValues(alpha: 0.8),
                                   child: ClipOval(
                                     child: Image.memory(
                                       base64.decode(
@@ -531,7 +537,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                               : CircleAvatar(
                                   radius: isSmallScreen ? 30 : 40,
                                   backgroundColor:
-                                      Colors.white.withOpacity(0.8),
+                                      Colors.white.withValues(alpha: 0.8),
                                   child: Icon(
                                     Icons.person,
                                     size: isSmallScreen ? 30 : 40,
@@ -633,7 +639,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

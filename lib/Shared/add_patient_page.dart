@@ -14,10 +14,10 @@ class AddPatientPage extends StatefulWidget {
   const AddPatientPage({super.key});
 
   @override
-  _AddPatientPageState createState() => _AddPatientPageState();
+  AddPatientPageState createState() => AddPatientPageState();
 }
 
-class _AddPatientPageState extends State<AddPatientPage> {
+class AddPatientPageState extends State<AddPatientPage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _fatherNameController = TextEditingController();
@@ -57,18 +57,43 @@ class _AddPatientPageState extends State<AddPatientPage> {
     'contact_info': {'ar': 'معلومات التواصل', 'en': 'Contact Information'},
     'required_field': {'ar': '*', 'en': '*'},
     'select_date': {'ar': 'اختر التاريخ', 'en': 'Select date'},
-    'validation_required': {'ar': 'هذا الحقل مطلوب', 'en': 'This field is required'},
-    'validation_id_length': {'ar': 'رقم الهوية يجب أن يكون 9 أرقام', 'en': 'ID must be 9 digits'},
-    'validation_phone_length': {'ar': 'رقم الهاتف يجب أن يكون 10 أرقام', 'en': 'Phone must be 10 digits'},
-    'validation_email': {'ar': 'البريد الإلكتروني غير صحيح', 'en': 'Invalid email format'},
-    'validation_gender': {'ar': 'الرجاء اختيار الجنس', 'en': 'Please select gender'},
-    'add_success': {'ar': 'تمت إضافة المريض بنجاح', 'en': 'Patient added successfully'},
-    'add_error': {'ar': 'حدث خطأ أثناء إضافة المريض', 'en': 'Error adding patient'},
-    'image_error': {'ar': 'حدث خطأ في تحميل الصورة', 'en': 'Image upload error'},
+    'validation_required': {
+      'ar': 'هذا الحقل مطلوب',
+      'en': 'This field is required'
+    },
+    'validation_id_length': {
+      'ar': 'رقم الهوية يجب أن يكون 9 أرقام',
+      'en': 'ID must be 9 digits'
+    },
+    'validation_phone_length': {
+      'ar': 'رقم الهاتف يجب أن يكون 10 أرقام',
+      'en': 'Phone must be 10 digits'
+    },
+    'validation_email': {
+      'ar': 'البريد الإلكتروني غير صحيح',
+      'en': 'Invalid email format'
+    },
+    'validation_gender': {
+      'ar': 'الرجاء اختيار الجنس',
+      'en': 'Please select gender'
+    },
+    'add_success': {
+      'ar': 'تمت إضافة المريض بنجاح',
+      'en': 'Patient added successfully'
+    },
+    'add_error': {
+      'ar': 'حدث خطأ أثناء إضافة المريض',
+      'en': 'Error adding patient'
+    },
+    'image_error': {
+      'ar': 'حدث خطأ في تحميل الصورة',
+      'en': 'Image upload error'
+    },
   };
 
   String _translate(String key) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     return _translations[key]![languageProvider.isEnglish ? 'en' : 'ar'] ?? key;
   }
 
@@ -84,12 +109,15 @@ class _AddPatientPageState extends State<AddPatientPage> {
       if (image != null) {
         if (kIsWeb) {
           final bytes = await image.readAsBytes();
+          if (!mounted) return;
           setState(() => _patientImage = bytes);
         } else {
+          if (!mounted) return;
           setState(() => _patientImage = File(image.path));
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_translate('image_error')}: $e')),
       );
@@ -140,6 +168,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
 
       return base64Encode(compressedImage);
     } catch (e) {
+      if (!mounted) return null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_translate('image_error')}: $e')),
       );
@@ -151,6 +180,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_gender == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translate('validation_gender'))),
       );
@@ -180,6 +210,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
         'patientId': patientId,
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translate('add_success'))),
       );
@@ -192,6 +223,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
         _gender = null;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_translate('add_error')}: $e')),
       );
@@ -216,8 +248,10 @@ class _AddPatientPageState extends State<AddPatientPage> {
     }
 
     return kIsWeb
-        ? Image.memory(_patientImage as Uint8List, width: 150, height: 150, fit: BoxFit.cover)
-        : Image.file(_patientImage as File, width: 150, height: 150, fit: BoxFit.cover);
+        ? Image.memory(_patientImage as Uint8List,
+            width: 150, height: 150, fit: BoxFit.cover)
+        : Image.file(_patientImage as File,
+            width: 150, height: 150, fit: BoxFit.cover);
   }
 
   Widget _buildTextFormField({
@@ -248,7 +282,8 @@ class _AddPatientPageState extends State<AddPatientPage> {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
       validator: validator,
     );
@@ -299,7 +334,8 @@ class _AddPatientPageState extends State<AddPatientPage> {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
     return Directionality(
-      textDirection: languageProvider.isEnglish ? TextDirection.ltr : TextDirection.rtl,
+      textDirection:
+          languageProvider.isEnglish ? TextDirection.ltr : TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -365,8 +401,10 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           Expanded(
                             child: _buildTextFormField(
                               controller: _firstNameController,
-                              labelText: '${_translate('first_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
+                              labelText:
+                                  '${_translate('first_name')} ${_translate('required_field')}',
+                              prefixIcon:
+                                  Icon(Icons.person, color: accentColor),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return _translate('validation_required');
@@ -379,8 +417,10 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           Expanded(
                             child: _buildTextFormField(
                               controller: _fatherNameController,
-                              labelText: '${_translate('father_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
+                              labelText:
+                                  '${_translate('father_name')} ${_translate('required_field')}',
+                              prefixIcon:
+                                  Icon(Icons.person, color: accentColor),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return _translate('validation_required');
@@ -398,8 +438,10 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           Expanded(
                             child: _buildTextFormField(
                               controller: _grandfatherNameController,
-                              labelText: '${_translate('grandfather_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
+                              labelText:
+                                  '${_translate('grandfather_name')} ${_translate('required_field')}',
+                              prefixIcon:
+                                  Icon(Icons.person, color: accentColor),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return _translate('validation_required');
@@ -412,8 +454,10 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           Expanded(
                             child: _buildTextFormField(
                               controller: _familyNameController,
-                              labelText: '${_translate('family_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
+                              labelText:
+                                  '${_translate('family_name')} ${_translate('required_field')}',
+                              prefixIcon:
+                                  Icon(Icons.person, color: accentColor),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return _translate('validation_required');
@@ -432,10 +476,12 @@ class _AddPatientPageState extends State<AddPatientPage> {
                           Expanded(
                             child: _buildTextFormField(
                               controller: _idNumberController,
-                              labelText: '${_translate('id_number')} ${_translate('required_field')}',
+                              labelText:
+                                  '${_translate('id_number')} ${_translate('required_field')}',
                               keyboardType: TextInputType.number,
                               maxLength: 9,
-                              prefixIcon: Icon(Icons.credit_card, color: accentColor),
+                              prefixIcon:
+                                  Icon(Icons.credit_card, color: accentColor),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return _translate('validation_required');
@@ -453,24 +499,32 @@ class _AddPatientPageState extends State<AddPatientPage> {
                               onTap: _selectBirthDate,
                               child: InputDecorator(
                                 decoration: InputDecoration(
-                                  labelText: '${_translate('birth_date')} ${_translate('required_field')}',
-                                  labelStyle: TextStyle(color: primaryColor.withOpacity(0.8)),
-                                  prefixIcon: Icon(Icons.calendar_today, color: accentColor),
+                                  labelText:
+                                      '${_translate('birth_date')} ${_translate('required_field')}',
+                                  labelStyle: TextStyle(
+                                      color: primaryColor.withOpacity(0.8)),
+                                  prefixIcon: Icon(Icons.calendar_today,
+                                      color: accentColor),
                                   filled: true,
                                   fillColor: Colors.grey[50],
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                    borderSide:
+                                        BorderSide(color: Colors.grey.shade300),
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 16, horizontal: 16),
                                 ),
                                 child: Text(
                                   _birthDate == null
                                       ? _translate('select_date')
-                                      : DateFormat('yyyy-MM-dd').format(_birthDate!),
+                                      : DateFormat('yyyy-MM-dd')
+                                          .format(_birthDate!),
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: _birthDate == null ? Colors.grey[600] : Colors.black,
+                                    color: _birthDate == null
+                                        ? Colors.grey[600]
+                                        : Colors.black,
                                   ),
                                 ),
                               ),
@@ -509,7 +563,8 @@ class _AddPatientPageState extends State<AddPatientPage> {
                       // رقم الهاتف
                       _buildTextFormField(
                         controller: _phoneController,
-                        labelText: '${_translate('phone')} ${_translate('required_field')}',
+                        labelText:
+                            '${_translate('phone')} ${_translate('required_field')}',
                         keyboardType: TextInputType.phone,
                         maxLength: 10,
                         prefixIcon: Icon(Icons.phone, color: accentColor),
@@ -528,7 +583,8 @@ class _AddPatientPageState extends State<AddPatientPage> {
                       // مكان السكن
                       _buildTextFormField(
                         controller: _addressController,
-                        labelText: '${_translate('address')} ${_translate('required_field')}',
+                        labelText:
+                            '${_translate('address')} ${_translate('required_field')}',
                         prefixIcon: Icon(Icons.location_on, color: accentColor),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -546,7 +602,9 @@ class _AddPatientPageState extends State<AddPatientPage> {
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: Icon(Icons.email, color: accentColor),
                         validator: (value) {
-                          if (value != null && value.isNotEmpty && !value.contains('@')) {
+                          if (value != null &&
+                              value.isNotEmpty &&
+                              !value.contains('@')) {
                             return _translate('validation_email');
                           }
                           return null;
@@ -572,13 +630,13 @@ class _AddPatientPageState extends State<AddPatientPage> {
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
-                      _translate('add_patient_button'),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                            _translate('add_patient_button'),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 20),

@@ -249,41 +249,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ElevatedButton(
               onPressed: () async {
                 // Implement user creation logic
-                Navigator.pop(context);
-              },
-              child: Text(_translate(context, 'save')),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showPermissionsDialog(Map<String, dynamic> user) async {
-    final permissionsController = TextEditingController(
-      text: user['permissions']?.toString() ?? '',
-    );
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(_translate(context, 'change_permissions')),
-          content: TextField(
-            controller: permissionsController,
-            decoration: InputDecoration(
-              labelText: _translate(context, 'permissions'),
-              hintText: 'admin,doctor,student',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(_translate(context, 'cancel')),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                // Implement permission update logic
+                if (!mounted) return;
                 Navigator.pop(context);
               },
               child: Text(_translate(context, 'save')),
