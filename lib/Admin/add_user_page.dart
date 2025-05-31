@@ -118,6 +118,7 @@ class _AddUserPageState extends State<AddUserPage> {
   Future<void> _pickImage() async {
     try {
       if (!await _checkPermissions()) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(_translate('permission_denied'))),
         );
@@ -131,26 +132,31 @@ class _AddUserPageState extends State<AddUserPage> {
         imageQuality: 85,
       );
 
+      if (!mounted) return;
       if (image != null) {
         if (kIsWeb) {
           final bytes = await image.readAsBytes();
+          if (!mounted) return;
           setState(() => _patientImage = bytes);
         } else {
           final bytes = await File(image.path).readAsBytes();
-          final compressedImage = await FlutterImageCompress.compressWithList(
+          await FlutterImageCompress.compressWithList(
             bytes,
             minWidth: 800,
             minHeight: 800,
             quality: 70,
           );
+          if (!mounted) return;
           setState(() => _patientImage = File(image.path));
         }
       }
     } on PlatformException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_translate('image_error')}: ${e.message}')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_translate('image_error')}: $e')),
       );
@@ -194,6 +200,7 @@ class _AddUserPageState extends State<AddUserPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translate('validation_password_match'))),
       );
@@ -201,6 +208,7 @@ class _AddUserPageState extends State<AddUserPage> {
     }
 
     if (_gender == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translate('validation_gender'))),
       );
@@ -208,6 +216,7 @@ class _AddUserPageState extends State<AddUserPage> {
     }
 
     if (_role == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translate('validation_user_type'))),
       );
@@ -251,6 +260,7 @@ class _AddUserPageState extends State<AddUserPage> {
         password: _passwordController.text.trim(),
       );
 
+      if (!mounted) return;
       // تحضير بيانات المستخدم
       final userData = {
         'firstName': _firstNameController.text.trim(),
@@ -288,6 +298,7 @@ class _AddUserPageState extends State<AddUserPage> {
       // إرسال بريد التحقق
       await userCredential.user?.sendEmailVerification();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translate('add_success'))),
       );
@@ -302,10 +313,12 @@ class _AddUserPageState extends State<AddUserPage> {
       } else if (e.code == 'username-exists') {
         errorMessage = _translate('username_taken');
       }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_translate('add_error')}: $e')),
       );
@@ -381,7 +394,7 @@ class _AddUserPageState extends State<AddUserPage> {
       maxLength: maxLength,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: primaryColor.withOpacity(0.8)),
+        labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
@@ -409,7 +422,7 @@ class _AddUserPageState extends State<AddUserPage> {
           child: Text(
             '${_translate('gender')} ${_translate('required_field')}',
             style: TextStyle(
-              color: primaryColor.withOpacity(0.8),
+              color: primaryColor.withValues(alpha: 0.8),
               fontSize: 16,
             ),
           ),
@@ -449,7 +462,7 @@ class _AddUserPageState extends State<AddUserPage> {
           child: Text(
             '${_translate('user_type')} ${_translate('required_field')}',
             style: TextStyle(
-              color: primaryColor.withOpacity(0.8),
+              color: primaryColor.withValues(alpha: 0.8),
               fontSize: 16,
             ),
           ),
@@ -645,7 +658,7 @@ class _AddUserPageState extends State<AddUserPage> {
                               child: InputDecorator(
                                 decoration: InputDecoration(
                                   labelText: '${_translate('birth_date')} ${_translate('required_field')}',
-                                  labelStyle: TextStyle(color: primaryColor.withOpacity(0.8)),
+                                  labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
                                   prefixIcon: Icon(Icons.calendar_today, color: accentColor),
                                   filled: true,
                                   fillColor: Colors.grey[50],

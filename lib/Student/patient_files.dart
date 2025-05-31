@@ -1,7 +1,3 @@
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:698338353.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:4075729156.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:2120095562.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:1327536519.
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:provider/provider.dart';
@@ -190,11 +186,6 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
     return _translations[key]![languageProvider.currentLocale.languageCode] ?? '';
   }
 
-  bool _isArabic(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    return languageProvider.currentLocale.languageCode == 'ar';
-  }
-
   String _getFullName(Map<String, dynamic> user) {
     final firstName = user['firstName']?.toString().trim() ?? '';
     final fatherName = user['fatherName']?.toString().trim() ?? '';
@@ -240,26 +231,31 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
       final user = waitingList.firstWhere((u) => u['id'] == userId);
       await _waitingListRef.child(userId).remove();
 
+      if (!mounted) return;
       setState(() {
         waitingList.removeWhere((user) => user['id'] == userId);
         filteredWaitingList = List.from(waitingList);
       });
 
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${_translate(context, 'remove_from_waiting_list')} ${user['name']}'),
-            backgroundColor: Colors.orange,
-          )
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${_translate(context, 'remove_from_waiting_list')} ${user['name']}'),
+              backgroundColor: Colors.orange,
+            )
+        );
+      }
     } catch (e) {
       debugPrint('Error removing from waiting list: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_translate(context, 'error_loading')),
-            backgroundColor: Colors.red,
-          )
-      );
+      if (!mounted) return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_translate(context, 'error_loading')),
+              backgroundColor: Colors.red,
+            )
+        );
+      }
     }
   }
 

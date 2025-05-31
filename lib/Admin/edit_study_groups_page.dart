@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class EditStudyGroupsPage extends StatefulWidget {
   const EditStudyGroupsPage({super.key});
 
   @override
-  _EditStudyGroupsPageState createState() => _EditStudyGroupsPageState();
+  EditStudyGroupsPageState createState() => EditStudyGroupsPageState();
 }
 
-class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
-  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref('studyGroups');
+class EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
+  final DatabaseReference _databaseRef =
+      FirebaseDatabase.instance.ref('studyGroups');
   final DatabaseReference _usersRef = FirebaseDatabase.instance.ref('users');
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isLoading = true;
   List<Map<String, dynamic>> _studyGroups = [];
   List<Map<String, dynamic>> _allStudents = [];
@@ -26,15 +25,17 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
   Future<void> _loadData() async {
     try {
       final groupsSnapshot = await _databaseRef.get();
-      final studentsSnapshot = await _usersRef.orderByChild('role').equalTo('dental_student').get();
+      final studentsSnapshot =
+          await _usersRef.orderByChild('role').equalTo('dental_student').get();
 
+      if (!mounted) return;
       setState(() {
         _processGroupsData(groupsSnapshot);
         _processStudentsData(studentsSnapshot);
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading data: $e');
+      // print('Error loading data: $e');
       setState(() => _isLoading = false);
       _showError('حدث خطأ في تحميل البيانات');
     }
@@ -71,8 +72,10 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
   }
 
   Future<void> _showEditDialog(Map<String, dynamic> group) async {
-    TextEditingController nameController = TextEditingController(text: group['groupName']);
-    TextEditingController casesController = TextEditingController(text: group['requiredCases'].toString());
+    TextEditingController nameController =
+        TextEditingController(text: group['groupName']);
+    TextEditingController casesController =
+        TextEditingController(text: group['requiredCases'].toString());
     String? selectedClinic = group['clinic'];
     List<String> selectedDays = List<String>.from(group['days'] ?? []);
 
@@ -92,24 +95,34 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                   ),
                   TextField(
                     controller: casesController,
-                    decoration: const InputDecoration(labelText: 'عدد الحالات المطلوبة'),
+                    decoration: const InputDecoration(
+                        labelText: 'عدد الحالات المطلوبة'),
                     keyboardType: TextInputType.number,
                   ),
                   DropdownButtonFormField<String>(
                     value: selectedClinic,
-                    items: ['العيادة 1', 'العيادة 2', 'العيادة 3'].map((clinic) {
+                    items:
+                        ['العيادة 1', 'العيادة 2', 'العيادة 3'].map((clinic) {
                       return DropdownMenuItem(
                         value: clinic,
                         child: Text(clinic),
                       );
                     }).toList(),
-                    onChanged: (value) => setState(() => selectedClinic = value),
+                    onChanged: (value) =>
+                        setState(() => selectedClinic = value),
                     decoration: const InputDecoration(labelText: 'العيادة'),
                   ),
                   const SizedBox(height: 10),
                   const Text('أيام الدراسة:'),
                   Wrap(
-                    children: ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'].map((day) {
+                    children: [
+                      'السبت',
+                      'الأحد',
+                      'الإثنين',
+                      'الثلاثاء',
+                      'الأربعاء',
+                      'الخميس'
+                    ].map((day) {
                       return FilterChip(
                         label: Text(day),
                         selected: selectedDays.contains(day),
@@ -142,6 +155,7 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                     selectedClinic ?? '',
                     selectedDays,
                   );
+                  if (!mounted) return;
                   Navigator.pop(context);
                 },
                 child: const Text('حفظ التعديلات'),
@@ -153,7 +167,8 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
     );
   }
 
-  Future<void> _updateGroup(String groupId, String name, int cases, String clinic, List<String> days) async {
+  Future<void> _updateGroup(String groupId, String name, int cases,
+      String clinic, List<String> days) async {
     try {
       await _databaseRef.child(groupId).update({
         'groupName': name,
@@ -162,16 +177,20 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
         'days': days,
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       });
+      if (!mounted) return;
       _showSuccess('تم تحديث الشعبة بنجاح');
       _loadData();
     } catch (e) {
+      if (!mounted) return;
       _showError('حدث خطأ أثناء التحديث');
     }
   }
 
   Future<void> _showManageStudentsDialog(Map<String, dynamic> group) async {
     final currentStudents = Map<String, dynamic>.from(group['students'] ?? {});
-    final availableStudents = _allStudents.where((student) => !currentStudents.containsKey(student['id'])).toList();
+    final availableStudents = _allStudents
+        .where((student) => !currentStudents.containsKey(student['id']))
+        .toList();
 
     await showDialog(
       context: context,
@@ -184,7 +203,8 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('الطلاب الحاليين:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('الطلاب الحاليين:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Expanded(
                     child: ListView.builder(
                       shrinkWrap: true,
@@ -196,7 +216,8 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                           title: Text(student['name']),
                           subtitle: Text(student['studentId']),
                           trailing: IconButton(
-                            icon: const Icon(Icons.remove_circle, color: Colors.red),
+                            icon: const Icon(Icons.remove_circle,
+                                color: Colors.red),
                             onPressed: () async {
                               await _removeStudent(group['id'], studentId);
                               setState(() {
@@ -209,7 +230,8 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                     ),
                   ),
                   const Divider(),
-                  const Text('الطلاب المتاحين للإضافة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('الطلاب المتاحين للإضافة:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Expanded(
                     child: ListView.builder(
                       shrinkWrap: true,
@@ -220,7 +242,8 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                           title: Text(student['name']),
                           subtitle: Text(student['studentId']),
                           trailing: IconButton(
-                            icon: const Icon(Icons.add_circle, color: Colors.green),
+                            icon: const Icon(Icons.add_circle,
+                                color: Colors.green),
                             onPressed: () async {
                               await _addStudent(group['id'], student);
                               setState(() {
@@ -253,12 +276,13 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
 
   Future<void> _addStudent(String groupId, Map<String, dynamic> student) async {
     try {
-      await _databaseRef.child('$groupId/students/${student['id']}').set({
-        'name': student['name'],
-        'studentId': student['studentId']
-      });
+      await _databaseRef
+          .child('$groupId/students/${student['id']}')
+          .set({'name': student['name'], 'studentId': student['studentId']});
+      if (!mounted) return;
       _showSuccess('تم إضافة الطالب بنجاح');
     } catch (e) {
+      if (!mounted) return;
       _showError('حدث خطأ أثناء إضافة الطالب');
     }
   }
@@ -266,22 +290,22 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
   Future<void> _removeStudent(String groupId, String studentId) async {
     try {
       await _databaseRef.child('$groupId/students/$studentId').remove();
+      if (!mounted) return;
       _showSuccess('تم إزالة الطالب بنجاح');
     } catch (e) {
+      if (!mounted) return;
       _showError('حدث خطأ أثناء إزالة الطالب');
     }
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red)
-    );
+        SnackBar(content: Text(message), backgroundColor: Colors.red));
   }
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.green)
-    );
+        SnackBar(content: Text(message), backgroundColor: Colors.green));
   }
 
   @override
@@ -299,14 +323,14 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _studyGroups.isEmpty
-          ? const Center(child: Text('لا توجد شعب دراسية'))
-          : ListView.builder(
-        itemCount: _studyGroups.length,
-        itemBuilder: (context, index) {
-          final group = _studyGroups[index];
-          return _buildGroupCard(group);
-        },
-      ),
+              ? const Center(child: Text('لا توجد شعب دراسية'))
+              : ListView.builder(
+                  itemCount: _studyGroups.length,
+                  itemBuilder: (context, index) {
+                    final group = _studyGroups[index];
+                    return _buildGroupCard(group);
+                  },
+                ),
     );
   }
 
@@ -326,7 +350,8 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
               children: [
                 Text(
                   group['groupName'] ?? 'بدون اسم',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Row(
                   children: [
@@ -345,13 +370,18 @@ class _EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
             const Divider(),
             _buildInfoRow('الطبيب', group['doctorName'] ?? 'غير معين'),
             _buildInfoRow('العيادة', group['clinic'] ?? 'غير محددة'),
-            _buildInfoRow('الوقت', '${group['startTime']} - ${group['endTime']}'),
-            _buildInfoRow('الأيام', (group['days'] as List?)?.join('، ') ?? 'غير محددة'),
-            _buildInfoRow('عدد الحالات', group['requiredCases']?.toString() ?? '0'),
+            _buildInfoRow(
+                'الوقت', '${group['startTime']} - ${group['endTime']}'),
+            _buildInfoRow(
+                'الأيام', (group['days'] as List?)?.join('، ') ?? 'غير محددة'),
+            _buildInfoRow(
+                'عدد الحالات', group['requiredCases']?.toString() ?? '0'),
             const SizedBox(height: 8),
-            const Text('الطلاب المسجلون:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('الطلاب المسجلون:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             if (students.isEmpty)
-              const Text('لا يوجد طلاب مسجلون', style: TextStyle(color: Colors.grey))
+              const Text('لا يوجد طلاب مسجلون',
+                  style: TextStyle(color: Colors.grey))
             else
               ...students.entries.map((entry) {
                 final student = entry.value as Map<dynamic, dynamic>;

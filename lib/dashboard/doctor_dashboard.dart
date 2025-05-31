@@ -136,6 +136,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     try {
       final user = _auth.currentUser;
       if (user == null) {
+        if (!mounted) return;
         setState(() {
           _supervisorName = _translate(context, 'supervisor');
           _isLoading = false;
@@ -144,6 +145,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       }
 
       final snapshot = await _supervisorRef.get();
+      if (!mounted) return;
 
       if (!snapshot.exists) {
         setState(() {
@@ -157,6 +159,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       _updateSupervisorData(data);
     } catch (e) {
       debugPrint('Error loading supervisor data: $e');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _hasError = true;
@@ -209,9 +212,11 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       );
 
       await _auth.signOut();
+      if (!mounted) return;
 
       // إغلاق مؤشر التحميل
       Navigator.of(context).pop();
+      if (!mounted) return;
 
       // الانتقال إلى صفحة تسجيل الدخول وإزالة جميع الصفحات السابقة
       Navigator.pushAndRemoveUntil(
@@ -221,14 +226,16 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       );
     } catch (e) {
       // إغلاق مؤشر التحميل في حالة الخطأ
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_translate(context, 'sign_out_error')}: $e'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_translate(context, 'sign_out_error')}: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -237,6 +244,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.width < 350;
+    final isLargeScreen = mediaQuery.size.width >= 600;
 
     return Directionality(
       textDirection: _isArabic(context) ? TextDirection.rtl : TextDirection.ltr,
@@ -263,8 +271,110 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
             )
           ],
         ),
+        drawer: isLargeScreen ? _buildDrawer(context) : null,
         body: _buildBody(context),
         bottomNavigationBar: _buildBottomNavigation(context),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: primaryColor,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _supervisorImageUrl.isNotEmpty
+                    ? CircleAvatar(
+                        radius: 32,
+                        backgroundColor: Colors.white,
+                        child: ClipOval(
+                          child: Image.memory(
+                            base64Decode(_supervisorImageUrl.replaceFirst(
+                                'data:image/jpeg;base64,', '')),
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    : CircleAvatar(
+                        radius: 32,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.person,
+                          size: 32,
+                          color: accentColor,
+                        ),
+                      ),
+                const SizedBox(height: 10),
+                Text(
+                  _supervisorName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: Text(_translate(context, 'home')),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.list_alt),
+            title: Text(_translate(context, 'waiting_list')),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const WaitingListPage(userRole: 'doctor'),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.school),
+            title: Text(_translate(context, 'students_evaluation')),
+            onTap: () => _navigateTo(context, '/students_evaluation'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today),
+            title: Text(_translate(context, 'appointments')),
+            onTap: () => _navigateTo(context, '/appointments'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.assignment),
+            title: Text(_translate(context, 'reports')),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ExaminedPatientsPage(),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: Text(_translate(context, 'signing_out')),
+            onTap: _signOut,
+          ),
+        ],
       ),
     );
   }
@@ -361,7 +471,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                               ? CircleAvatar(
                                   radius: isSmallScreen ? 30 : 40,
                                   backgroundColor:
-                                      Colors.white.withOpacity(0.8),
+                                      Colors.white.withValues(alpha: 0.8),
                                   child: ClipOval(
                                     child: Image.memory(
                                       base64Decode(
@@ -376,7 +486,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                               : CircleAvatar(
                                   radius: isSmallScreen ? 30 : 40,
                                   backgroundColor:
-                                      Colors.white.withOpacity(0.8),
+                                      Colors.white.withValues(alpha: 0.8),
                                   child: Icon(
                                     Icons.person,
                                     size: isSmallScreen ? 30 : 40,
@@ -493,7 +603,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

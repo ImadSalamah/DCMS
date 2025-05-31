@@ -3,7 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
-import '../Doctor/Initialexamination.dart';
+import '../Doctor/initial_examination.dart';
 import 'dart:async';
 
 class WaitingListPage extends StatefulWidget {
@@ -37,18 +37,36 @@ class _WaitingListPageState extends State<WaitingListPage> {
     'years': {'ar': 'سنة', 'en': 'years'},
     'months': {'ar': 'شهر', 'en': 'months'},
     'days': {'ar': 'يوم', 'en': 'days'},
-    'remove_from_waiting_list': {'ar': 'إزالة من الانتظار', 'en': 'Remove from Waiting List'},
+    'remove_from_waiting_list': {
+      'ar': 'إزالة من الانتظار',
+      'en': 'Remove from Waiting List'
+    },
     'no_patients': {'ar': 'لا يوجد مرضى', 'en': 'No patients found'},
-    'error_loading': {'ar': 'خطأ في تحميل البيانات', 'en': 'Error loading data'},
+    'error_loading': {
+      'ar': 'خطأ في تحميل البيانات',
+      'en': 'Error loading data'
+    },
     'retry': {'ar': 'إعادة المحاولة', 'en': 'Retry'},
     'age_unknown': {'ar': 'العمر غير معروف', 'en': 'Age unknown'},
-    'next_step': {'ar': 'انتقل للفحص الأولي', 'en': 'Go to Initial Examination'},
-    'all_removed_at_11pm': {'ar': 'تم إزالة جميع المرضى في الساعة 11 مساءً', 'en': 'All patients removed at 11 PM'},
+    'next_step': {
+      'ar': 'انتقل للفحص الأولي',
+      'en': 'Go to Initial Examination'
+    },
+    'all_removed_at_11pm': {
+      'ar': 'تم إزالة جميع المرضى في الساعة 11 مساءً',
+      'en': 'All patients removed at 11 PM'
+    },
     'error_moving': {'ar': 'خطأ في نقل المريض', 'en': 'Error moving patient'},
-    'doctor_not_logged_in': {'ar': 'يجب تسجيل دخول الطبيب أولاً', 'en': 'Doctor must be logged in'},
+    'doctor_not_logged_in': {
+      'ar': 'يجب تسجيل دخول الطبيب أولاً',
+      'en': 'Doctor must be logged in'
+    },
     'unknown': {'ar': 'غير معروف', 'en': 'Unknown'},
     'no_number': {'ar': 'بدون رقم', 'en': 'No number'},
-    'search_hint': {'ar': 'ابحث بالاسم أو رقم الهاتف...', 'en': 'Search by name or phone...'},
+    'search_hint': {
+      'ar': 'ابحث بالاسم أو رقم الهاتف...',
+      'en': 'Search by name or phone...'
+    },
   };
 
   @override
@@ -76,11 +94,13 @@ class _WaitingListPageState extends State<WaitingListPage> {
 
   void _setupRealtimeListeners() {
     _usersSubscription = _usersRef.onValue.listen((usersSnapshot) {
-      _waitingListSubscription = _waitingListRef.onValue.listen((waitingSnapshot) {
+      _waitingListSubscription =
+          _waitingListRef.onValue.listen((waitingSnapshot) {
         if (usersSnapshot.snapshot.exists && waitingSnapshot.snapshot.exists) {
           final allUsers = _parseUsersSnapshot(usersSnapshot.snapshot);
           setState(() {
-            waitingList = _parseWaitingSnapshot(waitingSnapshot.snapshot, allUsers);
+            waitingList =
+                _parseWaitingSnapshot(waitingSnapshot.snapshot, allUsers);
             _filteredWaitingList = List.from(waitingList);
             _isLoading = false;
             _hasError = false;
@@ -124,7 +144,8 @@ class _WaitingListPageState extends State<WaitingListPage> {
     return result;
   }
 
-  List<Map<String, dynamic>> _parseWaitingSnapshot(DataSnapshot snapshot, List<Map<String, dynamic>> allUsers) {
+  List<Map<String, dynamic>> _parseWaitingSnapshot(
+      DataSnapshot snapshot, List<Map<String, dynamic>> allUsers) {
     if (!snapshot.exists) return [];
     final List<Map<String, dynamic>> result = [];
     final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
@@ -135,7 +156,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
         waitingData['id'] = key.toString();
 
         final user = allUsers.firstWhere(
-              (u) => u['id'] == waitingData['id'],
+          (u) => u['id'] == waitingData['id'],
           orElse: () => {},
         );
 
@@ -146,13 +167,19 @@ class _WaitingListPageState extends State<WaitingListPage> {
           }
 
           waitingData.addAll({
-            'firstName': user['firstName']?.toString().trim() ?? _translate(context, 'unknown'),
-            'fatherName': user['fatherName']?.toString().trim() ?? _translate(context, 'unknown'),
-            'grandfatherName': user['grandfatherName']?.toString().trim() ?? _translate(context, 'unknown'),
-            'familyName': user['familyName']?.toString().trim() ?? _translate(context, 'unknown'),
+            'firstName': user['firstName']?.toString().trim() ??
+                _translate(context, 'unknown'),
+            'fatherName': user['fatherName']?.toString().trim() ??
+                _translate(context, 'unknown'),
+            'grandfatherName': user['grandfatherName']?.toString().trim() ??
+                _translate(context, 'unknown'),
+            'familyName': user['familyName']?.toString().trim() ??
+                _translate(context, 'unknown'),
             'birthDate': birthDate ?? 0,
-            'gender': user['gender']?.toString().trim() ?? _translate(context, 'unknown'),
-            'phone': user['phone']?.toString().trim() ?? _translate(context, 'no_number'),
+            'gender': user['gender']?.toString().trim() ??
+                _translate(context, 'unknown'),
+            'phone': user['phone']?.toString().trim() ??
+                _translate(context, 'no_number'),
           });
         }
 
@@ -179,12 +206,17 @@ class _WaitingListPageState extends State<WaitingListPage> {
       user['fatherName'],
       user['grandfatherName'],
       user['familyName']
-    ].where((part) => part != null && part != _translate(context, 'unknown')).join(' ').trim();
+    ]
+        .where((part) => part != null && part != _translate(context, 'unknown'))
+        .join(' ')
+        .trim();
   }
 
   String _translate(BuildContext context, String key) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    return _translations[key]![languageProvider.currentLocale.languageCode] ?? key;
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+    return _translations[key]![languageProvider.currentLocale.languageCode] ??
+        key;
   }
 
   String _calculateAge(BuildContext context, dynamic birthTimestamp) {
@@ -238,10 +270,12 @@ class _WaitingListPageState extends State<WaitingListPage> {
     }
   }
 
-  Future<void> _moveToInitialExamination(Map<String, dynamic> patientData) async {
+  Future<void> _moveToInitialExamination(
+      Map<String, dynamic> patientData) async {
     try {
       final User? user = _auth.currentUser;
       if (user == null) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_translate(context, 'doctor_not_logged_in')),
@@ -276,6 +310,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
       }
 
       await _waitingListRef.child(patientData['id']).remove();
+      if (!mounted) return;
 
       Navigator.push(
         context,
@@ -288,6 +323,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
         ),
       );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_translate(context, 'next_step')),
@@ -296,9 +332,11 @@ class _WaitingListPageState extends State<WaitingListPage> {
       );
     } catch (e) {
       debugPrint('Error moving to initial examination: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_translate(context, 'error_moving')}: ${e.toString()}'),
+          content:
+              Text('${_translate(context, 'error_moving')}: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -308,6 +346,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
   Future<void> _removeAllFromWaitingList() async {
     try {
       await _waitingListRef.remove();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_translate(context, 'all_removed_at_11pm')),
@@ -316,6 +355,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
       );
     } catch (e) {
       debugPrint('Error removing all from waiting list: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_translate(context, 'error_loading')),
@@ -334,7 +374,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
 
     _nightlyCleanupTimer = Timer(
       timeUntilElevenPM,
-          () {
+      () {
         _removeAllFromWaitingList();
         _scheduleNightlyCleanup();
       },
@@ -343,44 +383,65 @@ class _WaitingListPageState extends State<WaitingListPage> {
 
   Widget _buildActionButtons(Map<String, dynamic> user, BuildContext context) {
     if (widget.userRole == 'secretary') {
-      return ElevatedButton(
-        onPressed: () => _removeFromWaitingList(user['id']),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        child: Text(
-          _translate(context, 'remove_from_waiting_list'),
-          style: const TextStyle(color: Colors.white),
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => _removeFromWaitingList(user['id']),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 0,
+          ),
+          child: Text(
+            _translate(context, 'remove_from_waiting_list'),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         ),
       );
     } else if (widget.userRole == 'doctor') {
-      return ElevatedButton(
-        onPressed: () => _moveToInitialExamination(user),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        child: Text(
-          _translate(context, 'next_step'),
-          style: const TextStyle(color: Colors.white),
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => _moveToInitialExamination(user),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 0,
+          ),
+          child: Text(
+            _translate(context, 'next_step'),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         ),
       );
     }
     return Container();
   }
 
-  Widget _buildWaitingListCard(Map<String, dynamic> user, BuildContext context) {
+  Widget _buildWaitingListCard(
+      Map<String, dynamic> user, BuildContext context) {
     final fullName = _getFullName(user);
     final phone = user['phone'] ?? _translate(context, 'no_number');
     final ageText = _calculateAge(context, user['birthDate'] ?? 0);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       elevation: 2,
-      color: Colors.grey[100],
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -389,10 +450,13 @@ class _WaitingListPageState extends State<WaitingListPage> {
               children: [
                 Expanded(
                   child: Text(
-                    fullName.isNotEmpty ? fullName : _translate(context, 'name'),
+                    fullName.isNotEmpty
+                        ? fullName
+                        : _translate(context, 'name'),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -400,32 +464,30 @@ class _WaitingListPageState extends State<WaitingListPage> {
                 Icon(Icons.access_time, color: primaryColor),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Row(
               children: [
-                const Icon(Icons.phone, size: 16, color: Colors.grey),
+                const Icon(Icons.phone, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
                   phone,
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.cake, size: 16, color: Colors.grey),
+                const Icon(Icons.cake, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
                   ageText,
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Center(
-              child: _buildActionButtons(user, context),
-            ),
+            const SizedBox(height: 18),
+            _buildActionButtons(user, context),
           ],
         ),
       ),
@@ -441,7 +503,7 @@ class _WaitingListPageState extends State<WaitingListPage> {
           const SizedBox(height: 20),
           Text(
             _translate(context, 'error_loading'),
-            style: const TextStyle(fontSize: 18),
+            style: const TextStyle(fontSize: 18, color: Colors.black87),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -455,10 +517,16 @@ class _WaitingListPageState extends State<WaitingListPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text(
               _translate(context, 'retry'),
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16),
             ),
           ),
         ],
@@ -471,14 +539,22 @@ class _WaitingListPageState extends State<WaitingListPage> {
       padding: const EdgeInsets.all(16.0),
       child: TextField(
         controller: _searchController,
+        style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
           hintText: _translate(context, 'search_hint'),
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: const Icon(Icons.search, color: Colors.grey),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: primaryColor, width: 2),
           ),
           filled: true,
-          fillColor: Colors.grey[200],
+          fillColor: Colors.grey[100],
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         ),
       ),
     );
@@ -487,29 +563,41 @@ class _WaitingListPageState extends State<WaitingListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // توحيد لون الخلفية
       appBar: AppBar(
-        title: Text(_translate(context, 'waiting_list')),
+        title: Text(_translate(context, 'waiting_list'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _hasError
-          ? _buildErrorWidget()
-          : Column(
-        children: [
-          _buildSearchField(),
-          Expanded(
-            child: _filteredWaitingList.isEmpty
-                ? Center(child: Text(_translate(context, 'no_patients')))
-                : ListView.builder(
-              itemCount: _filteredWaitingList.length,
-              itemBuilder: (context, index) {
-                return _buildWaitingListCard(_filteredWaitingList[index], context);
-              },
-            ),
-          ),
-        ],
-      ),
+              ? _buildErrorWidget()
+              : Column(
+                  children: [
+                    _buildSearchField(),
+                    Expanded(
+                      child: _filteredWaitingList.isEmpty
+                          ? Center(
+                              child: Text(
+                                _translate(context, 'no_patients'),
+                                style: const TextStyle(
+                                    fontSize: 18, color: Colors.black54),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _filteredWaitingList.length,
+                              itemBuilder: (context, index) {
+                                return _buildWaitingListCard(
+                                    _filteredWaitingList[index], context);
+                              },
+                            ),
+                    ),
+                  ],
+                ),
     );
   }
 }

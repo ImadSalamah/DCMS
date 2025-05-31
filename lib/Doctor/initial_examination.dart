@@ -97,7 +97,7 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
     setState(() {
       _examData['dentalChart']['selectedTeeth'] = selectedTeeth;
       _examData['dentalChart']['teethConditions'] =
-          _teethColors.map((key, value) => MapEntry(key, value.value.toRadixString(16)));
+          _teethColors.map((key, value) => MapEntry(key, value.value.toRadixString(16).padLeft(8, '0')));
     });
   }
 
@@ -112,11 +112,11 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (p['firstName'] != null && p['familyName'] != null)
-              Text('Patient: ${p['firstName']} ${p['familyName']}'),
-            if (widget.age != null) Text('Age: ${widget.age}'),
-            if (p['gender'] != null) Text('Gender: ${p['gender']}'),
-            if (p['phone'] != null) Text('Phone: ${p['phone']}'),
-          ].where((widget) => widget != null).toList(),
+              Text('Patient: \\${p['firstName']} \\${p['familyName']}'),
+            if (widget.age != null) Text('Age: \\${widget.age}'),
+            if (p['gender'] != null) Text('Gender: \\${p['gender']}'),
+            if (p['phone'] != null) Text('Phone: \\${p['phone']}'),
+          ],
         ),
       ),
     );
@@ -253,17 +253,14 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
       if (patientId == null) {
         throw Exception('Patient ID is null');
       }
-
       final examRecord = {
         'patientId': patientId,
         'doctorId': widget.doctorId,
         'timestamp': ServerValue.timestamp,
         'examData': _examData,
       };
-
       await _database.child('examinations').push().set(examRecord);
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Examination saved successfully!')),
       );
@@ -271,7 +268,7 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
   }
@@ -280,6 +277,12 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
     return ScreeningForm(
       patientData: widget.patientData,
       age: widget.age,
+      onSave: (screeningData) {
+        // Store screeningData in a variable for later use in _submitExamination
+        setState(() {
+          _examData['screening'] = screeningData;
+        });
+      },
     );
   }
 
@@ -437,7 +440,7 @@ class TeethSelector extends StatefulWidget {
   final Color tooltipColor;
   final List<String> initiallySelected;
   final Map<String, Color> colorized;
-  final Map<String, Color> StrokedColorized;
+  final Map<String, Color> strokedColorized;
   final Color defaultStrokeColor;
   final Map<String, double> strokeWidth;
   final double defaultStrokeWidth;
@@ -459,7 +462,7 @@ class TeethSelector extends StatefulWidget {
     this.tooltipColor = Colors.black,
     this.initiallySelected = const [],
     this.colorized = const {},
-    this.StrokedColorized = const {},
+    this.strokedColorized = const {},
     this.defaultStrokeColor = Colors.transparent,
     this.strokeWidth = const {},
     this.defaultStrokeWidth = 1,
@@ -576,7 +579,7 @@ class _TeethSelectorState extends State<TeethSelector> {
                 tooltipTextStyle: widget.tooltipTextStyle,
                 notation: widget.notation,
                 customColor: localColorized[entry.key],
-                strokeColor: widget.StrokedColorized[entry.key] ??
+                strokeColor: widget.strokedColorized[entry.key] ??
                     widget.defaultStrokeColor,
                 strokeWidth: widget.strokeWidth[entry.key] ??
                     widget.defaultStrokeWidth,
@@ -631,6 +634,7 @@ class _TeethSelectorState extends State<TeethSelector> {
     if (selectedDisease != null) {
       setState(() {
         if (!widget.multiSelect) {
+          // Remove unnecessary null check here
           for (var k in toothSelection.keys) {
             toothSelection[k] = false;
           }

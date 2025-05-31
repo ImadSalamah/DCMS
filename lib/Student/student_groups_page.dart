@@ -13,10 +13,10 @@ class StudentGroupsPage extends StatefulWidget {
   const StudentGroupsPage({super.key});
 
   @override
-  _StudentGroupsPageState createState() => _StudentGroupsPageState();
+  StudentGroupsPageState createState() => StudentGroupsPageState();
 }
 
-class _StudentGroupsPageState extends State<StudentGroupsPage> {
+class StudentGroupsPageState extends State<StudentGroupsPage> {
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Map<String, dynamic>> _studentGroups = [];
@@ -39,11 +39,13 @@ class _StudentGroupsPageState extends State<StudentGroupsPage> {
         final List<Map<String, dynamic>> groups = [];
 
         allGroups.forEach((groupId, groupData) {
-          final students = groupData['students'] as Map<dynamic, dynamic>? ?? {};
+          final students =
+              groupData['students'] as Map<dynamic, dynamic>? ?? {};
           if (students.containsKey(user.uid)) {
             groups.add({
               'id': groupId.toString(),
-              'groupNumber': groupData['groupNumber']?.toString() ?? 'غير معروف',
+              'groupNumber':
+                  groupData['groupNumber']?.toString() ?? 'غير معروف',
               'courseId': groupData['courseId']?.toString() ?? '',
               'courseName': groupData['courseName']?.toString() ?? 'غير معروف',
               'requiredCases': groupData['requiredCases'] ?? 3,
@@ -87,23 +89,23 @@ class _StudentGroupsPageState extends State<StudentGroupsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _studentGroups.isEmpty
-          ? const Center(child: Text('لا توجد شعب مسجلة لك'))
-          : ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _studentGroups.length,
-        itemBuilder: (context, index) {
-          final group = _studentGroups[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: ListTile(
-              title: Text(group['courseName']),
-              subtitle: Text('الشعبة ${group['groupNumber']}'),
-              trailing: const Icon(Icons.arrow_forward),
-              onTap: () => _navigateToLogbook(context, group),
-            ),
-          );
-        },
-      ),
+              ? const Center(child: Text('لا توجد شعب مسجلة لك'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: _studentGroups.length,
+                  itemBuilder: (context, index) {
+                    final group = _studentGroups[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: ListTile(
+                        title: Text(group['courseName']),
+                        subtitle: Text('الشعبة ${group['groupNumber']}'),
+                        trailing: const Icon(Icons.arrow_forward),
+                        onTap: () => _navigateToLogbook(context, group),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }
@@ -204,7 +206,7 @@ class _CasesScreenState extends State<_CasesScreen> {
         setState(() => _searchResults = results);
       }
     } catch (e) {
-      print('Search error: $e');
+      debugPrint('Search error: $e');
     } finally {
       setState(() => _isSearching = false);
     }
@@ -234,7 +236,7 @@ class _CasesScreenState extends State<_CasesScreen> {
 
     Widget formScreen;
 
-    switch(widget.courseId) {
+    switch (widget.courseId) {
       case '080114141': // كورس الجراحة
         formScreen = _SurgeryCaseForm(
           groupId: widget.groupId,
@@ -283,7 +285,7 @@ class _CasesScreenState extends State<_CasesScreen> {
   void _viewCaseDetails(Map<String, dynamic> caseData) {
     Widget detailsScreen;
 
-    switch(widget.courseId) {
+    switch (widget.courseId) {
       case '080114141':
         detailsScreen = _SurgeryCaseDetails(caseData: caseData);
         break;
@@ -323,9 +325,8 @@ class _CasesScreenState extends State<_CasesScreen> {
                   decoration: InputDecoration(
                     labelText: 'ابحث عن مريض (بالاسم أو رقم الهوية)',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _isSearching
-                        ? const CircularProgressIndicator()
-                        : null,
+                    suffixIcon:
+                        _isSearching ? const CircularProgressIndicator() : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -347,8 +348,7 @@ class _CasesScreenState extends State<_CasesScreen> {
                         return ListTile(
                           title: Text(patient['fullName'] ?? 'غير معروف'),
                           subtitle: Text(
-                              'هوية: ${patient['idNumber'] ?? 'غير معروف'} - جامعي: ${patient['studentId'] ?? 'غير معروف'}'
-                          ),
+                              'هوية: ${patient['idNumber'] ?? 'غير معروف'} - جامعي: ${patient['studentId'] ?? 'غير معروف'}'),
                           onTap: () => _selectPatient(patient),
                         );
                       },
@@ -373,9 +373,11 @@ class _CasesScreenState extends State<_CasesScreen> {
                                   ),
                                 ),
                                 Text(_selectedPatient!['fullName'] ?? ''),
-                                Text('هوية: ${_selectedPatient!['idNumber'] ?? 'غير معروف'}'),
+                                Text(
+                                    'هوية: ${_selectedPatient!['idNumber'] ?? 'غير معروف'}'),
                                 if (_selectedPatient!['studentId'] != null)
-                                  Text('جامعي: ${_selectedPatient!['studentId']}'),
+                                  Text(
+                                      'جامعي: ${_selectedPatient!['studentId']}'),
                               ],
                             ),
                           ),
@@ -403,22 +405,24 @@ class _CasesScreenState extends State<_CasesScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : GridView.builder(
-              padding: const EdgeInsets.all(16.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
-              ),
-              itemCount: widget.requiredCases,
-              itemBuilder: (context, index) {
-                if (index < _submittedCases.length) {
-                  return _buildSubmittedCaseCard(_submittedCases[index]);
-                } else {
-                  return _buildEmptyCaseCard(index - _submittedCases.length + 1, remainingCases);
-                }
-              },
-            ),
+                    padding: const EdgeInsets.all(16.0),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: widget.requiredCases,
+                    itemBuilder: (context, index) {
+                      if (index < _submittedCases.length) {
+                        return _buildSubmittedCaseCard(_submittedCases[index]);
+                      } else {
+                        return _buildEmptyCaseCard(
+                            index - _submittedCases.length + 1, remainingCases);
+                      }
+                    },
+                  ),
           ),
         ],
       ),
@@ -442,7 +446,8 @@ class _CasesScreenState extends State<_CasesScreen> {
                 'الحالة ${caseData['caseNumber']}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const Text('الحالة: مكتملة', style: TextStyle(color: Colors.green)),
+              const Text('الحالة: مكتملة',
+                  style: TextStyle(color: Colors.green)),
               if (caseData['patientName'] != null)
                 Text('المريض: ${caseData['patientName']}'),
             ],
@@ -464,7 +469,9 @@ class _CasesScreenState extends State<_CasesScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                remainingCases > 0 ? Icons.add_circle_outline : Icons.check_circle,
+                remainingCases > 0
+                    ? Icons.add_circle_outline
+                    : Icons.check_circle,
                 size: 40,
                 color: remainingCases > 0 ? Colors.grey : Colors.green,
               ),
@@ -510,7 +517,8 @@ class _SurgeryCaseFormState extends State<_SurgeryCaseForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _diagnosisController = TextEditingController();
   final TextEditingController _surgeryTypeController = TextEditingController();
-  final TextEditingController _anesthesiaTypeController = TextEditingController();
+  final TextEditingController _anesthesiaTypeController =
+      TextEditingController();
   final TextEditingController _procedureController = TextEditingController();
 
   Future<void> _submitForm() async {
@@ -539,13 +547,15 @@ class _SurgeryCaseFormState extends State<_SurgeryCaseForm> {
         'status': 'pending',
       };
 
-      await FirebaseDatabase.instance.ref()
+      await FirebaseDatabase.instance
+          .ref()
           .child('pendingCases')
           .child(widget.groupId)
           .child(user.uid)
           .push()
           .set(newCase);
 
+      if (!mounted) return;
       widget.onSave();
       Navigator.pop(context);
     } catch (e) {
@@ -626,7 +636,8 @@ class _SurgeryCaseFormState extends State<_SurgeryCaseForm> {
                 child: ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
                   ),
                   child: const Text('حفظ الحالة الجراحية'),
                 ),
@@ -655,7 +666,8 @@ class _InternalMedicineCaseForm extends StatefulWidget {
   });
 
   @override
-  State<_InternalMedicineCaseForm> createState() => _InternalMedicineCaseFormState();
+  State<_InternalMedicineCaseForm> createState() =>
+      _InternalMedicineCaseFormState();
 }
 
 class _InternalMedicineCaseFormState extends State<_InternalMedicineCaseForm> {
@@ -691,13 +703,15 @@ class _InternalMedicineCaseFormState extends State<_InternalMedicineCaseForm> {
         'status': 'pending',
       };
 
-      await FirebaseDatabase.instance.ref()
+      await FirebaseDatabase.instance
+          .ref()
           .child('pendingCases')
           .child(widget.groupId)
           .child(user.uid)
           .push()
           .set(newCase);
 
+      if (!mounted) return;
       widget.onSave();
       Navigator.pop(context);
     } catch (e) {
@@ -779,7 +793,8 @@ class _InternalMedicineCaseFormState extends State<_InternalMedicineCaseForm> {
                 child: ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
                   ),
                   child: const Text('حفظ الحالة الباطنية'),
                 ),
@@ -844,7 +859,8 @@ class _PediatricsCaseFormState extends State<_PediatricsCaseForm> {
         'status': 'pending',
       };
 
-      await FirebaseDatabase.instance.ref()
+      await FirebaseDatabase.instance
+          .ref()
           .child('pendingCases')
           .child(widget.groupId)
           .child(user.uid)
@@ -930,7 +946,8 @@ class _PediatricsCaseFormState extends State<_PediatricsCaseForm> {
                 child: ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
                   ),
                   child: const Text('حفظ حالة الأطفال'),
                 ),
@@ -991,7 +1008,8 @@ class _DefaultCaseFormState extends State<_DefaultCaseForm> {
         'status': 'pending',
       };
 
-      await FirebaseDatabase.instance.ref()
+      await FirebaseDatabase.instance
+          .ref()
           .child('pendingCases')
           .child(widget.groupId)
           .child(user.uid)
@@ -1061,7 +1079,8 @@ class _DefaultCaseFormState extends State<_DefaultCaseForm> {
                 child: ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
                   ),
                   child: const Text('حفظ الحالة'),
                 ),
@@ -1104,9 +1123,11 @@ class _SurgeryCaseDetails extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
+                          Text(
+                              'رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
                           if (caseData['patientDetails']['studentId'] != null)
-                            Text('الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
+                            Text(
+                                'الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
                         ],
                       ),
                   ],
@@ -1178,9 +1199,11 @@ class _InternalMedicineCaseDetails extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
+                          Text(
+                              'رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
                           if (caseData['patientDetails']['studentId'] != null)
-                            Text('الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
+                            Text(
+                                'الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
                         ],
                       ),
                   ],
@@ -1252,9 +1275,11 @@ class _PediatricsCaseDetails extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
+                          Text(
+                              'رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
                           if (caseData['patientDetails']['studentId'] != null)
-                            Text('الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
+                            Text(
+                                'الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
                         ],
                       ),
                   ],
@@ -1326,9 +1351,11 @@ class _DefaultCaseDetails extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
+                          Text(
+                              'رقم الهوية: ${caseData['patientDetails']['idNumber']}'),
                           if (caseData['patientDetails']['studentId'] != null)
-                            Text('الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
+                            Text(
+                                'الرقم الجامعي: ${caseData['patientDetails']['studentId']}'),
                         ],
                       ),
                   ],

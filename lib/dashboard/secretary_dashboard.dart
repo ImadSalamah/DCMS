@@ -7,8 +7,9 @@ import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../Student/patient_files.dart';
 import '../Shared/waiting_list_page.dart';
-import '../Shared/AddPatientPage.dart';
-import '../Secretry/AccountApprov.dart';
+import '../Shared/add_patient_page.dart';
+import '../Secretry/account_approv.dart';
+import 'package:flutter/foundation.dart'; // للكشف عن الويب
 
 class SecretaryDashboard extends StatefulWidget {
   const SecretaryDashboard({super.key});
@@ -27,6 +28,7 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
 
   String _userName = '';
   String _userImageUrl = '';
+  Uint8List? _userImageBytes;
   List<Map<String, dynamic>> waitingList = [];
   List<Map<String, dynamic>> pendingAccounts = [];
   bool _isLoading = true;
@@ -147,7 +149,7 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
     return result;
   }
 
-  void _updateUserData(Map<dynamic, dynamic> data) {
+  void _updateUserData(Map<dynamic, dynamic> data) async {
     final firstName = data['firstName']?.toString().trim() ?? '';
     final fatherName = data['fatherName']?.toString().trim() ?? '';
     final grandfatherName = data['grandfatherName']?.toString().trim() ?? '';
@@ -161,15 +163,29 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
     ].join(' ');
 
     final imageData = data['image']?.toString() ?? '';
+    Uint8List? imageBytes;
+    if (imageData.isNotEmpty) {
+      try {
+        imageBytes = await compute(_decodeBase64Image, imageData);
+      } catch (e) {
+        imageBytes = null;
+      }
+    }
 
+    if (!mounted) return;
     setState(() {
       _userName =
           fullName.isNotEmpty ? fullName : _translate(context, 'secretary');
       _userImageUrl =
           imageData.isNotEmpty ? 'data:image/jpeg;base64,$imageData' : '';
+      _userImageBytes = imageBytes;
       _isLoading = false;
       _hasError = false;
     });
+  }
+
+  static Uint8List _decodeBase64Image(String base64Str) {
+    return base64Decode(base64Str.replaceFirst('data:image/jpeg;base64,', ''));
   }
 
   String _translate(BuildContext context, String key) {
@@ -202,6 +218,7 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.width < 350;
+    final isLargeScreen = mediaQuery.size.width >= 800 || kIsWeb;
 
     return Directionality(
       textDirection: _isArabic(context) ? TextDirection.rtl : TextDirection.ltr,
@@ -212,29 +229,167 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
             _translate(context, 'app_name'),
             style: TextStyle(
               color: Colors.white,
-              fontSize: isSmallScreen ? 16 : 18,
+              fontSize: isSmallScreen ? 16 : (isLargeScreen ? 24 : 18),
               fontWeight: FontWeight.bold,
             ),
           ),
           centerTitle: true,
+          leading: isLargeScreen
+              ? null
+              : Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
+                ),
           actions: [
             IconButton(
               icon: const Icon(Icons.language, color: Colors.white),
               onPressed: () => languageProvider.toggleLanguage(),
             ),
-            IconButton(
-              onPressed: _logout,
-              icon: const Icon(Icons.logout, color: Colors.white),
-            )
+            if (!kIsWeb)
+              IconButton(
+                onPressed: _logout,
+                icon: const Icon(Icons.logout, color: Colors.white),
+              ),
           ],
         ),
-        body: _buildBody(context),
-        bottomNavigationBar: _buildBottomNavigation(context),
+        drawer: isLargeScreen ? null : _buildDrawer(context),
+        body: isLargeScreen
+            ? Row(
+                children: [
+                  _buildDrawer(context, permanent: true),
+                  Expanded(child: _buildBody(context, isLargeScreen: true)),
+                ],
+              )
+            : _buildBody(context),
+        bottomNavigationBar:
+            isLargeScreen ? null : _buildBottomNavigation(context),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildDrawer(BuildContext context, {bool permanent = false}) {
+    final drawerContent = ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        DrawerHeader(
+          decoration: BoxDecoration(color: primaryColor),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _userImageUrl.isNotEmpty && _userImageBytes != null
+                  ? CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: ClipOval(
+                        child: Image.memory(
+                          _userImageBytes!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
+                  : CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person, size: 30, color: accentColor),
+                    ),
+              const SizedBox(height: 10),
+              Text(
+                _userName,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                _translate(context, 'secretary'),
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.home),
+          title: Text(_translate(context, 'home')),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.folder),
+          title: Text(_translate(context, 'patient_files')),
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const PatientFilesPage()));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.person_add),
+          title: Text(_translate(context, 'add_patient')),
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const AddPatientPage()));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.verified_user),
+          title: Text(_translate(context, 'approve_accounts')),
+          trailing: pendingAccounts.isNotEmpty
+              ? CircleAvatar(
+                  radius: 10,
+                  backgroundColor: Colors.red,
+                  child: Text(pendingAccounts.length.toString(),
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 12)))
+              : null,
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const AccountApprovalPage()));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.list_alt),
+          title: Text(_translate(context, 'waiting_list')),
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const WaitingListPage(userRole: 'secretary')));
+          },
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: Text(_translate(context, 'settings')),
+          onTap: () {},
+        ),
+        if (kIsWeb)
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: Text('Logout'),
+            onTap: _logout,
+          ),
+      ],
+    );
+    if (permanent) {
+      return Container(
+        width: 250,
+        color: Colors.white,
+        child: drawerContent,
+      );
+    }
+    return Drawer(child: drawerContent);
+  }
+
+  Widget _buildBody(BuildContext context, {bool isLargeScreen = false}) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -283,6 +438,7 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
 
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.width < 350;
+    final crossAxisCount = isLargeScreen ? 3 : 2;
 
     return Stack(
       children: [
@@ -299,14 +455,14 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
               Container(
                 margin: const EdgeInsets.all(20),
                 height: isSmallScreen ? 180 : 200,
-                decoration: BoxDecoration(
-                  image: const DecorationImage(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
                     image: AssetImage('lib/assets/backgrownd.png'),
                     fit: BoxFit.cover,
                   ),
-                  color: const Color(0x4D000000),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: const [
+                  color: Color(0x4D000000),
+                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                  boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 10,
@@ -326,15 +482,19 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _userImageUrl.isNotEmpty
+                          _userImageUrl.isNotEmpty && _userImageBytes != null
                               ? CircleAvatar(
                                   radius: isSmallScreen ? 30 : 40,
-                                  backgroundColor:
-                                      Colors.white.withOpacity(0.8),
+                                  backgroundColor: Color.fromARGB(
+                                    (Colors.white.a * 255.0 * 0.8).round() &
+                                        0xff,
+                                    (Colors.white.r * 255.0).round() & 0xff,
+                                    (Colors.white.g * 255.0).round() & 0xff,
+                                    (Colors.white.b * 255.0).round() & 0xff,
+                                  ),
                                   child: ClipOval(
                                     child: Image.memory(
-                                      base64Decode(_userImageUrl.replaceFirst(
-                                          'data:image/jpeg;base64,', '')),
+                                      _userImageBytes!,
                                       width: isSmallScreen ? 60 : 80,
                                       height: isSmallScreen ? 60 : 80,
                                       fit: BoxFit.cover,
@@ -343,8 +503,13 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
                                 )
                               : CircleAvatar(
                                   radius: isSmallScreen ? 30 : 40,
-                                  backgroundColor:
-                                      Colors.white.withOpacity(0.8),
+                                  backgroundColor: Color.fromARGB(
+                                    (Colors.white.a * 255.0 * 0.8).round() &
+                                        0xff,
+                                    (Colors.white.r * 255.0).round() & 0xff,
+                                    (Colors.white.g * 255.0).round() & 0xff,
+                                    (Colors.white.b * 255.0).round() & 0xff,
+                                  ),
                                   child: Icon(
                                     Icons.person,
                                     size: isSmallScreen ? 30 : 40,
@@ -387,7 +552,7 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
+                  crossAxisCount: crossAxisCount,
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                   childAspectRatio: 1.1,
@@ -488,13 +653,23 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: Color.fromARGB(
+                        (color.a * 255.0 * 0.1).round() & 0xff,
+                        (color.r * 255.0).round() & 0xff,
+                        (color.g * 255.0).round() & 0xff,
+                        (color.b * 255.0).round() & 0xff,
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       icon,
                       size: isSmallScreen ? 24 : 30,
-                      color: color,
+                      color: Color.fromARGB(
+                        (primaryColor.a * 255.0 * 1.0).round() & 0xff,
+                        (primaryColor.r * 255.0).round() & 0xff,
+                        (primaryColor.g * 255.0).round() & 0xff,
+                        (primaryColor.b * 255.0).round() & 0xff,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
