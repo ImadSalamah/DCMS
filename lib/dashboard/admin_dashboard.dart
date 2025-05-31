@@ -7,9 +7,11 @@ import 'package:provider/provider.dart';
 import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../Admin/add_user_page.dart';
+import '../Admin/edit_user_page.dart';
 import '../Secretry/users_list_page.dart';
 import '../Admin/add_student.dart';
 import '../Admin/manage_study_groups_page.dart';
+
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -45,7 +47,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'ar': 'عيادات أسنان الجامعة العربية الأمريكية',
       'en': 'Arab American University Dental Clinics'
     },
-    'error_loading_data': {'ar': 'حدث خطأ في تحميل البيانات', 'en': 'Error loading data'},
+    'error_loading_data': {
+      'ar': 'حدث خطأ في تحميل البيانات',
+      'en': 'Error loading data'
+    },
     'retry': {'ar': 'إعادة المحاولة', 'en': 'Retry'},
     'logout': {'ar': 'تسجيل الخروج', 'en': 'Logout'},
     'email': {'ar': 'البريد الإلكتروني', 'en': 'Email'},
@@ -56,10 +61,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     'close': {'ar': 'إغلاق', 'en': 'Close'},
     'menu': {'ar': 'القائمة', 'en': 'Menu'},
     'study_groups': {'ar': 'الشعب الدراسية', 'en': 'Study Groups'},
-    'manage_study_groups': {'ar': 'إدارة الشعب الدراسية', 'en': 'Manage Study Groups'},
+    'manage_study_groups': {
+      'ar': 'إدارة الشعب الدراسية',
+      'en': 'Manage Study Groups'
+    },
     'add_study_group': {'ar': 'إضافة شعبة دراسية', 'en': 'Add Study Group'},
-    'edit_study_groups': {'ar': 'تعديل الشعب الدراسية', 'en': 'Edit Study Groups'},
-
+    'edit_study_groups': {
+      'ar': 'تعديل الشعب الدراسية',
+      'en': 'Edit Study Groups'
+    },
   };
 
   @override
@@ -84,6 +94,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     try {
       final user = _auth.currentUser;
       if (user == null) {
+        if (!mounted) return;
         setState(() {
           _userName = _translate(context, 'admin');
           _isLoading = false;
@@ -92,6 +103,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       }
 
       final snapshot = await _adminRef.get();
+      if (!mounted) return;
       if (!snapshot.exists) {
         setState(() {
           _userName = _translate(context, 'admin');
@@ -101,9 +113,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
       }
 
       final data = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      if (!mounted) return;
       _updateUserData(data);
     } catch (e) {
       debugPrint('Error loading admin data: $e');
+      if (!mounted) return;
       setState(() {
         _hasError = true;
         _isLoading = false;
@@ -165,18 +179,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     setState(() {
       _userName = fullName.isNotEmpty ? fullName : _translate(context, 'admin');
-      _userImageUrl = imageData.isNotEmpty ? 'data:image/jpeg;base64,$imageData' : '';
+      _userImageUrl =
+          imageData.isNotEmpty ? 'data:image/jpeg;base64,$imageData' : '';
       _hasError = false;
     });
   }
 
   String _translate(BuildContext context, String key) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    return _translations[key]![languageProvider.currentLocale.languageCode] ?? '';
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+    return _translations[key]![languageProvider.currentLocale.languageCode] ??
+        '';
   }
 
   bool _isArabic(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     return languageProvider.currentLocale.languageCode == 'ar';
   }
 
@@ -278,10 +296,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    final mediaQuery = MediaQuery.of(context);
-    final isSmallScreen = mediaQuery.size.width < 350;
-
+    // Removed unused variables 'languageProvider' and 'isSmallScreen'
     return Directionality(
       textDirection: _isArabic(context) ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
@@ -321,7 +336,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       actions: [
         IconButton(
           icon: const Icon(Icons.language, color: Colors.white),
-          onPressed: () => Provider.of<LanguageProvider>(context, listen: false).toggleLanguage(),
+          onPressed: () => Provider.of<LanguageProvider>(context, listen: false)
+              .toggleLanguage(),
         ),
         IconButton(
           onPressed: _logout,
@@ -348,7 +364,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       actions: [
         IconButton(
           icon: const Icon(Icons.language, color: Colors.white),
-          onPressed: () => Provider.of<LanguageProvider>(context, listen: false).toggleLanguage(),
+          onPressed: () => Provider.of<LanguageProvider>(context, listen: false)
+              .toggleLanguage(),
         ),
         IconButton(
           onPressed: _logout,
@@ -414,7 +431,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: isWeb ? 3 : 2,
+                  crossAxisCount: 2, // صفين فقط
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                   childAspectRatio: isWeb ? 1.3 : 1.1,
@@ -429,7 +446,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const UsersListPage()),
+                          MaterialPageRoute(
+                            builder: (context) => EditUserPage(
+                              user: allUsers.isNotEmpty ? allUsers.first : {},
+                              usersList: allUsers,
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -441,7 +463,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const AddUserPage()),
+                          MaterialPageRoute(
+                              builder: (context) => const AddUserPage()),
                         );
                       },
                     ),
@@ -453,22 +476,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const AddDentalStudentPage()),
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const AddDentalStudentPage()),
                         );
                       },
                     ),
 
-                    _buildFeatureBox(
-                      context,
-                      Icons.security,
-                      _translate(context, 'change_permissions'),
-                      Colors.orange,
-                      onTap: () {
-                        if (allUsers.isNotEmpty) {
-                          _showPermissionsDialog(allUsers.first);
-                        }
-                      },
-                    ),
                     _buildFeatureBox(
                       context,
                       Icons.group,
@@ -477,7 +491,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const AdminManageGroupsPage()),                        );
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const AdminManageGroupsPage()),
+                        );
                       },
                     ),
                   ],
@@ -503,26 +520,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               _userImageUrl.isNotEmpty
                   ? CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.white.withOpacity(0.8),
-                child: ClipOval(
-                  child: Image.memory(
-                    base64Decode(_userImageUrl.replaceFirst('data:image/jpeg;base64,', '')),
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              )
+                      radius: 30,
+                      backgroundColor: Colors.white.withValues(alpha: 0.8),
+                      child: ClipOval(
+                        child: Image.memory(
+                          base64Decode(_userImageUrl.replaceFirst(
+                              'data:image/jpeg;base64,', '')),
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
                   : CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.white.withOpacity(0.8),
-                child: Icon(
-                  Icons.person,
-                  size: 30,
-                  color: accentColor,
-                ),
-              ),
+                      radius: 30,
+                      backgroundColor: Colors.white.withValues(alpha: 0.8),
+                      child: Icon(
+                        Icons.person,
+                        size: 30,
+                        color: accentColor,
+                      ),
+                    ),
               const SizedBox(height: 10),
               Text(
                 _userName,
@@ -602,26 +620,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
               children: [
                 _userImageUrl.isNotEmpty
                     ? CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white.withOpacity(0.8),
-                  child: ClipOval(
-                    child: Image.memory(
-                      base64Decode(_userImageUrl.replaceFirst('data:image/jpeg;base64,', '')),
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                )
+                        radius: 30,
+                        backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        child: ClipOval(
+                          child: Image.memory(
+                            base64Decode(_userImageUrl.replaceFirst(
+                                'data:image/jpeg;base64,', '')),
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
                     : CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white.withOpacity(0.8),
-                  child: Icon(
-                    Icons.person,
-                    size: 30,
-                    color: accentColor,
-                  ),
-                ),
+                        radius: 30,
+                        backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        child: Icon(
+                          Icons.person,
+                          size: 30,
+                          color: accentColor,
+                        ),
+                      ),
                 const SizedBox(height: 10),
                 Text(
                   _userName,
@@ -724,26 +743,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
               children: [
                 _userImageUrl.isNotEmpty
                     ? CircleAvatar(
-                  radius: isSmallScreen ? 30 : 40,
-                  backgroundColor: Colors.white.withOpacity(0.8),
-                  child: ClipOval(
-                    child: Image.memory(
-                      base64Decode(_userImageUrl.replaceFirst('data:image/jpeg;base64,', '')),
-                      width: isSmallScreen ? 60 : 80,
-                      height: isSmallScreen ? 60 : 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                )
+                        radius: isSmallScreen ? 30 : 40,
+                        backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        child: ClipOval(
+                          child: Image.memory(
+                            base64Decode(_userImageUrl.replaceFirst(
+                                'data:image/jpeg;base64,', '')),
+                            width: isSmallScreen ? 60 : 80,
+                            height: isSmallScreen ? 60 : 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
                     : CircleAvatar(
-                  radius: isSmallScreen ? 30 : 40,
-                  backgroundColor: Colors.white.withOpacity(0.8),
-                  child: Icon(
-                    Icons.person,
-                    size: isSmallScreen ? 30 : 40,
-                    color: accentColor,
-                  ),
-                ),
+                        radius: isSmallScreen ? 30 : 40,
+                        backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        child: Icon(
+                          Icons.person,
+                          size: isSmallScreen ? 30 : 40,
+                          color: accentColor,
+                        ),
+                      ),
                 const SizedBox(height: 15),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -807,48 +827,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _showUsersList(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(_translate(context, 'manage_users')),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: allUsers.length,
-              itemBuilder: (context, index) {
-                final user = allUsers[index];
-                return ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(user['firstName'] ?? 'Unknown'),
-                  subtitle: Text(user['email'] ?? ''),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _showPermissionsDialog(user),
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(_translate(context, 'close')),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const UsersListPage()),
     );
   }
 
   Widget _buildFeatureBox(
-      BuildContext context,
-      IconData icon,
-      String title,
-      Color color, {
-        required VoidCallback onTap,
-      }) {
+    BuildContext context,
+    IconData icon,
+    String title,
+    Color color, {
+    required VoidCallback onTap,
+  }) {
     final isSmallScreen = MediaQuery.of(context).size.width < 350;
 
     return Material(
@@ -868,7 +859,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -906,7 +897,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey.shade300, width: 0.5)),
+        border:
+            Border(top: BorderSide(color: Colors.grey.shade300, width: 0.5)),
       ),
       child: SafeArea(
         top: false,
@@ -917,8 +909,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildBottomNavItem(context, Icons.home, 'home', isSmallScreen, isArabic),
-                _buildBottomNavItem(context, Icons.settings, 'settings', isSmallScreen, isArabic),
+                _buildBottomNavItem(
+                    context, Icons.home, 'home', isSmallScreen, isArabic),
+                _buildBottomNavItem(context, Icons.settings, 'settings',
+                    isSmallScreen, isArabic),
               ],
             ),
           ),
@@ -928,12 +922,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildBottomNavItem(
-      BuildContext context,
-      IconData icon,
-      String labelKey,
-      bool isSmallScreen,
-      bool isArabic,
-      ) {
+    BuildContext context,
+    IconData icon,
+    String labelKey,
+    bool isSmallScreen,
+    bool isArabic,
+  ) {
     final text = _translate(context, labelKey);
 
     return Expanded(

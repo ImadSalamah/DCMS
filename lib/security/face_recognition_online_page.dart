@@ -1,18 +1,8 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
-import 'face_recognition_online_page_web.dart';
-import 'face_recognition_online_page_mobile.dart';
+// This file conditionally exports the correct face recognition page for each platform.
+// Usage: import 'face_recognition_online_page.dart';
 
-class FaceRecognitionOnlinePage extends StatelessWidget {
-  const FaceRecognitionOnlinePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Face Recognition Online')),
-      body: kIsWeb
-          ? const FaceRecognitionOnlinePageWeb()
-          : const FaceRecognitionOnlinePageMobile(),
-    );
-  }
-}
+export 'face_recognition_online_page_web.dart'
+    if (dart.library.io) 'face_recognition_online_page_mobile.dart'
+    if (dart.library.html) 'face_recognition_online_page_web.dart'
+    if (dart.library.io) 'face_recognition_online_page_mobile.dart'
+        'face_recognition_online_page_stub.dart';

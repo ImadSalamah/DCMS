@@ -3,16 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 
-class FaceRecognitionOnlinePageMobile extends StatefulWidget {
-  const FaceRecognitionOnlinePageMobile({super.key});
+class FaceRecognitionOnlinePage extends StatefulWidget {
+  const FaceRecognitionOnlinePage({super.key});
 
   @override
-  State<FaceRecognitionOnlinePageMobile> createState() =>
-      _FaceRecognitionOnlinePageMobileState();
+  State<FaceRecognitionOnlinePage> createState() =>
+      _FaceRecognitionOnlinePageState();
 }
 
-class _FaceRecognitionOnlinePageMobileState
-    extends State<FaceRecognitionOnlinePageMobile> {
+class _FaceRecognitionOnlinePageState extends State<FaceRecognitionOnlinePage> {
   CameraController? _cameraController;
   List<CameraDescription>? _cameras;
   bool _isCameraInitialized = false;
