@@ -293,6 +293,181 @@ class _PatientDashboardState extends State<PatientDashboard> {
       );
     }
 
+    // فحص حالة الحساب
+    final user = _auth.currentUser;
+    if (user != null) {
+      // سنستخدم FutureBuilder لجلب isActive مباشرة من الداتا
+      return FutureBuilder<DataSnapshot>(
+        future: _patientRef.get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasData && snapshot.data != null) {
+            final data = snapshot.data!.value as Map<dynamic, dynamic>?;
+            final isActive = data != null && (data['isActive'] == true || data['isActive'] == 1);
+            if (!isActive) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.block, color: Colors.red, size: 60),
+                      SizedBox(height: 24),
+                      Text(
+                        'يرجى مراجعة إدارة عيادات الأسنان في الجامعة لتفعيل حسابك.',
+                        style: TextStyle(fontSize: 20, color: Colors.red, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+          final mediaQuery = MediaQuery.of(context);
+          final isSmallScreen = mediaQuery.size.width < 350;
+
+          return Stack(
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                ),
+              ),
+              SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom + 20),
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.all(20),
+                      height: isSmallScreen ? 180 : 200,
+                      decoration: BoxDecoration(
+                        image: const DecorationImage(
+                          image: AssetImage('lib/assets/backgrownd.png'),
+                          fit: BoxFit.cover,
+                        ),
+                        color: const Color(0x4D000000),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0x33000000),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _patientImageUrl.isNotEmpty
+                                    ? CircleAvatar(
+                                        radius: isSmallScreen ? 30 : 40,
+                                        backgroundColor:
+                                            Colors.white.withOpacity(0.8),
+                                        child: ClipOval(
+                                          child: Image.memory(
+                                            base64.decode(
+                                                _patientImageUrl.replaceFirst(
+                                                    'data:image/jpeg;base64,', '')),
+                                            width: isSmallScreen ? 60 : 80,
+                                            height: isSmallScreen ? 60 : 80,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      )
+                                    : CircleAvatar(
+                                        radius: isSmallScreen ? 30 : 40,
+                                        backgroundColor:
+                                            Colors.white.withOpacity(0.8),
+                                        child: Icon(
+                                          Icons.person,
+                                          size: isSmallScreen ? 30 : 40,
+                                          color: accentColor,
+                                        ),
+                                      ),
+                                const SizedBox(height: 15),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text(
+                                    _patientName,
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 16 : 20,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                        childAspectRatio: 1.1,
+                        children: [
+                          _buildFeatureBox(
+                            context,
+                            Icons.medical_services,
+                            _translate(context, 'medical_records'),
+                            primaryColor,
+                            () => _navigateTo(context, '/medical_records'),
+                          ),
+                          _buildFeatureBox(
+                            context,
+                            Icons.calendar_today,
+                            _translate(context, 'appointments'),
+                            Colors.green,
+                            () => _navigateTo(context, '/appointments'),
+                          ),
+                          _buildFeatureBox(
+                            context,
+                            Icons.medication,
+                            _translate(context, 'prescriptions'),
+                            Colors.orange,
+                            () => _navigateTo(context, '/prescriptions'),
+                          ),
+                          _buildFeatureBox(
+                            context,
+                            Icons.person,
+                            _translate(context, 'profile'),
+                            Colors.purple,
+                            () => _navigateTo(context, '/profile'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    // ...existing code for the normal dashboard body if user is null...
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.width < 350;
 

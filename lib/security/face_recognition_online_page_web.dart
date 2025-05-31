@@ -7,16 +7,15 @@ import 'dart:html' as html;
 // ignore: undefined_prefixed_name
 import 'dart:ui_web' as ui;
 
-class FaceRecognitionOnlinePageWeb extends StatefulWidget {
-  const FaceRecognitionOnlinePageWeb({super.key});
+class FaceRecognitionOnlinePage extends StatefulWidget {
+  const FaceRecognitionOnlinePage({super.key});
 
   @override
-  State<FaceRecognitionOnlinePageWeb> createState() =>
-      _FaceRecognitionOnlinePageWebState();
+  State<FaceRecognitionOnlinePage> createState() =>
+      _FaceRecognitionOnlinePageState();
 }
 
-class _FaceRecognitionOnlinePageWebState
-    extends State<FaceRecognitionOnlinePageWeb> {
+class _FaceRecognitionOnlinePageState extends State<FaceRecognitionOnlinePage> {
   html.VideoElement? _videoElement;
   html.CanvasElement? _canvas;
   List<Map<String, dynamic>> _detectedFaces = [];

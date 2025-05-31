@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../security/face_recognition_online_page.dart';
+import '../security/search_patient_security.dart';
 
 class SecurityDashboard extends StatefulWidget {
   const SecurityDashboard({super.key});
@@ -392,7 +393,13 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        debugPrint("Patient Search tapped");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const SearchPatientSecurityPage(),
+                          ),
+                        );
                       },
                       child: _buildFeatureBox(
                         context,
@@ -407,8 +414,7 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const FaceRecognitionOnlinePage(),
+                            builder: (context) => FaceRecognitionOnlinePage(),
                           ),
                         );
                       },
