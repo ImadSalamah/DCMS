@@ -156,6 +156,7 @@ class EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                     selectedDays,
                   );
                   if (!mounted) return;
+ if (!mounted) return;
                   Navigator.pop(context);
                 },
                 child: const Text('حفظ التعديلات'),

@@ -374,7 +374,7 @@ class _SecretaryDashboardState extends State<SecretaryDashboard> {
         if (kIsWeb)
           ListTile(
             leading: const Icon(Icons.logout),
-            title: Text('Logout'),
+            title: const Text('Logout'),
             onTap: _logout,
           ),
       ],

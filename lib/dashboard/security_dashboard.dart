@@ -414,7 +414,8 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const FaceRecognitionOnlinePage(),
+                            builder: (context) =>
+                                const FaceRecognitionOnlinePage(),
                           ),
                         );
                       },

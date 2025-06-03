@@ -38,6 +38,8 @@ dependencies:
   http: ^0.13.6
   universal_html: ^2.2.1 
   shared_preferences: ^2.5.3
+  tflite_flutter: ^0.11.0
+  google_mlkit_face_detection: ^0.13.1
 
 dev_dependencies:
   flutter_test:

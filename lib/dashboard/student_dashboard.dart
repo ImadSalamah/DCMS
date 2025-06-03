@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../Student/student_groups_page.dart';
+
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
 
@@ -41,9 +42,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
       'ar': 'عيادات أسنان الجامعة العربية الأمريكية',
       'en': 'Arab American University Dental Clinics'
     },
-    'error_loading_data': {'ar': 'حدث خطأ في تحميل البيانات', 'en': 'Error loading data'},
+    'error_loading_data': {
+      'ar': 'حدث خطأ في تحميل البيانات',
+      'en': 'Error loading data'
+    },
     'retry': {'ar': 'إعادة المحاولة', 'en': 'Retry'},
-    'no_internet': {'ar': 'لا يوجد اتصال بالإنترنت', 'en': 'No internet connection'},
+    'no_internet': {
+      'ar': 'لا يوجد اتصال بالإنترنت',
+      'en': 'No internet connection'
+    },
     'server_error': {'ar': 'خطأ في السيرفر', 'en': 'Server error'},
     'no_notifications': {'ar': 'لا توجد إشعارات', 'en': 'No notifications'},
     'close': {'ar': 'إغلاق', 'en': 'Close'},
@@ -61,7 +68,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final user = _auth.currentUser;
     if (user != null) {
       _userRef = FirebaseDatabase.instance.ref('users/${user.uid}');
-      _notificationsRef = FirebaseDatabase.instance.ref('notifications/${user.uid}');
+      _notificationsRef =
+          FirebaseDatabase.instance.ref('notifications/${user.uid}');
     }
   }
 
@@ -156,20 +164,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final imageData = data['image']?.toString() ?? '';
 
     setState(() {
-      _userName = fullName.isNotEmpty ? fullName : _translate(context, 'student');
-      _userImageUrl = imageData.isNotEmpty ? 'data:image/jpeg;base64,$imageData' : '';
+      _userName =
+          fullName.isNotEmpty ? fullName : _translate(context, 'student');
+      _userImageUrl =
+          imageData.isNotEmpty ? 'data:image/jpeg;base64,$imageData' : '';
       _isLoading = false;
       _hasError = false;
     });
   }
 
   String _translate(BuildContext context, String key) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    return _translations[key]![languageProvider.currentLocale.languageCode] ?? '';
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+    return _translations[key]![languageProvider.currentLocale.languageCode] ??
+        '';
   }
 
   bool _isArabic(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     return languageProvider.currentLocale.languageCode == 'ar';
   }
 
@@ -249,7 +262,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: Text(
                 _translate(context, 'retry'),
@@ -316,26 +330,29 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         children: [
                           _userImageUrl.isNotEmpty
                               ? CircleAvatar(
-                            radius: isSmallScreen ? 30 : 40,
-                            backgroundColor: Colors.white.withAlpha((0.8 * 255).toInt()),
-                            child: ClipOval(
-                              child: Image.memory(
-                                base64Decode(_userImageUrl.replaceFirst('data:image/jpeg;base64,', '')),
-                                width: isSmallScreen ? 60 : 80,
-                                height: isSmallScreen ? 60 : 80,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          )
+                                  radius: isSmallScreen ? 30 : 40,
+                                  backgroundColor: Colors.white
+                                      .withAlpha((0.8 * 255).toInt()),
+                                  child: ClipOval(
+                                    child: Image.memory(
+                                      base64Decode(_userImageUrl.replaceFirst(
+                                          'data:image/jpeg;base64,', '')),
+                                      width: isSmallScreen ? 60 : 80,
+                                      height: isSmallScreen ? 60 : 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )
                               : CircleAvatar(
-                            radius: isSmallScreen ? 30 : 40,
-                            backgroundColor: Colors.white.withAlpha((0.8 * 255).toInt()),
-                            child: Icon(
-                              Icons.person,
-                              size: isSmallScreen ? 30 : 40,
-                              color: accentColor,
-                            ),
-                          ),
+                                  radius: isSmallScreen ? 30 : 40,
+                                  backgroundColor: Colors.white
+                                      .withAlpha((0.8 * 255).toInt()),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: isSmallScreen ? 30 : 40,
+                                    color: accentColor,
+                                  ),
+                                ),
                           const SizedBox(height: 15),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -383,7 +400,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       _translate(context, 'view_examinations'),
                       primaryColor,
                       onTap: () {
-                        // Handle view examinations
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StudentGroupsPage(),
+                          ),
+                        );
                       },
                     ),
                     _buildFeatureBox(
@@ -400,7 +422,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         );
                       },
                     ),
-
                     _buildFeatureBox(
                       context,
                       Icons.notifications,
@@ -430,21 +451,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
           content: notifications.isEmpty
               ? Text(_translate(context, 'no_notifications'))
               : SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final notification = notifications[index];
-                return ListTile(
-                  leading: const Icon(Icons.notifications),
-                  title: Text(notification['title'] ?? ''),
-                  subtitle: Text(notification['message'] ?? ''),
-                  trailing: Text(notification['date'] ?? ''),
-                );
-              },
-            ),
-          ),
+                  width: double.maxFinite,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+                      return ListTile(
+                        leading: const Icon(Icons.notifications),
+                        title: Text(notification['title'] ?? ''),
+                        subtitle: Text(notification['message'] ?? ''),
+                        trailing: Text(notification['date'] ?? ''),
+                      );
+                    },
+                  ),
+                ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -457,13 +478,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildFeatureBox(
-      BuildContext context,
-      IconData icon,
-      String title,
-      Color color, {
-        int badgeCount = 0,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context,
+    IconData icon,
+    String title,
+    Color color, {
+    int badgeCount = 0,
+    required VoidCallback onTap,
+  }) {
     final isSmallScreen = MediaQuery.of(context).size.width < 350;
 
     return Material(
@@ -544,7 +565,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey.shade300, width: 0.5)),
+        border:
+            Border(top: BorderSide(color: Colors.grey.shade300, width: 0.5)),
       ),
       child: SafeArea(
         top: false,
@@ -555,8 +577,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildBottomNavItem(context, Icons.home, 'home', isSmallScreen, isArabic),
-                _buildBottomNavItem(context, Icons.settings, 'settings', isSmallScreen, isArabic),
+                _buildBottomNavItem(
+                    context, Icons.home, 'home', isSmallScreen, isArabic),
+                _buildBottomNavItem(context, Icons.settings, 'settings',
+                    isSmallScreen, isArabic),
               ],
             ),
           ),
@@ -566,12 +590,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildBottomNavItem(
-      BuildContext context,
-      IconData icon,
-      String labelKey,
-      bool isSmallScreen,
-      bool isArabic,
-      ) {
+    BuildContext context,
+    IconData icon,
+    String labelKey,
+    bool isSmallScreen,
+    bool isArabic,
+  ) {
     final text = _translate(context, labelKey);
 
     return Expanded(
