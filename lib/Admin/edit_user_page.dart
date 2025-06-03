@@ -206,6 +206,7 @@ class _EditUserPageState extends State<EditUserPage> {
     setState(() {
       isSaving = false;
     });
+    if (!mounted) return;
     Navigator.pop(context, true);
   }
 

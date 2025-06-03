@@ -27,9 +27,31 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
   String? _studentId;
   Map<String, dynamic>? _selectedStudent;
 
+  // New fields for course and form
+  String? _selectedCourseId;
+  String? _selectedFormId; // سيحدد تلقائياً
+  int? _formRequiredCount;
+
+  // ربط الكورسات بالفورمات تلقائياً
+  final Map<String, String> _courseFormMap = {
+    '101': 'formA',
+    '102': 'formB',
+    '103': 'formC',
+    '080114140': 'paedodontics_form', // ربط الكورس الجديد بالفورم الوهمي
+  };
+
   // Data lists
   List<Map<String, dynamic>> _doctorsList = [];
   final List<String> _clinicsList = ['العيادة 1', 'العيادة 2', 'العيادة 3'];
+  final List<Map<String, String>> _coursesList = [
+    {'id': '101', 'name': 'Course 101'},
+    {'id': '102', 'name': 'Course 102'},
+    {'id': '103', 'name': 'Course 103'},
+    {
+      'id': '080114140',
+      'name': 'Paedodontics I clinic (080114140)'
+    }, // إضافة الكورس الجديد
+  ];
   final List<String> _daysList = [
     'السبت',
     'الأحد',
@@ -154,8 +176,9 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState == null || !_formKey.currentState!.validate())
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
       return;
+    }
 
     _formKey.currentState!.save();
 
@@ -167,7 +190,10 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
         _endTime == null ||
         _selectedClinic == null ||
         _selectedDays.isEmpty ||
-        _selectedStudent == null) {
+        _selectedStudent == null ||
+        _selectedCourseId == null ||
+        _selectedFormId == null ||
+        _formRequiredCount == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_translate(context, 'fill_all_required_fields'))));
       return;
@@ -202,9 +228,26 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
             'studentId': _selectedStudent!['studentId']
           }
         },
+        'courseId': _selectedCourseId,
+        'formId': _selectedFormId,
+        'formRequiredCount': _formRequiredCount,
         'createdBy': user.uid,
         'createdAt': DateTime.now().millisecondsSinceEpoch,
       });
+
+      // إضافة سجل تقدم الطالب في الكورس إذا كان الكورس Paedodontics I clinic
+      if (_selectedCourseId == '080114140') {
+        await _databaseRef
+            .child('studentCourseProgress')
+            .child(_selectedStudent!['id'])
+            .child(_selectedCourseId!)
+            .set({
+          'historyCasesRequired': 3,
+          'historyCasesCompleted': 0,
+          'fissureCasesRequired': 6,
+          'fissureCasesCompleted': 0,
+        });
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -487,7 +530,57 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
                   style: const TextStyle(fontSize: 16, color: Colors.red),
                 ),
               ],
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+
+              // Course Selection
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'رقم الكورس',
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedCourseId,
+                items: _coursesList.map((course) {
+                  return DropdownMenuItem<String>(
+                    value: course['id'],
+                    child: Text(course['name'] ?? ''),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCourseId = value;
+                    _selectedFormId =
+                        value != null ? _courseFormMap[value] : null;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'هذا الحقل مطلوب';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Form Required Count
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'عدد مرات تعبئة الفورم',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'هذا الحقل مطلوب';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'رقم غير صحيح';
+                  }
+                  return null;
+                },
+                onSaved: (value) =>
+                    _formRequiredCount = int.tryParse(value ?? '0') ?? 0,
+              ),
+              const SizedBox(height: 20),
 
               // Submit Button
               Center(

@@ -3,7 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 
 class SearchPatientSecurityPage extends StatefulWidget {
-  const SearchPatientSecurityPage({Key? key}) : super(key: key);
+  const SearchPatientSecurityPage({super.key});
 
   @override
   State<SearchPatientSecurityPage> createState() => _SearchPatientSecurityPageState();

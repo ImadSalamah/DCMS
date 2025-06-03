@@ -6,7 +6,7 @@ import 'dart:convert';
 import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../Shared/waiting_list_page.dart';
-import '../Doctor/examined_patients_page.dart';
+import '../Doctor/doctor_pending_cases_page.dart';
 
 class SupervisorDashboard extends StatefulWidget {
   const SupervisorDashboard({super.key});
@@ -363,7 +363,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ExaminedPatientsPage(),
+                  builder: (context) => const DoctorPendingCasesPage(),
                 ),
               );
             },
@@ -563,7 +563,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  const ExaminedPatientsPage()),
+                                  const DoctorPendingCasesPage()),
                         );
                       },
                     ),

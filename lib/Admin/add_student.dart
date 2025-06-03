@@ -701,6 +701,7 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
       // Send verification email
       await userCredential.user?.sendEmailVerification();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Student added successfully')),
       );

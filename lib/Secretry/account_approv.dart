@@ -494,7 +494,7 @@ class AccountApprovalPageState extends State<AccountApprovalPage> {
                   ),
                 ],
               );
-            }).toList(),
+            }),
             const SizedBox(height: 16),
             if (isRejecting) ...[
               Row(
@@ -676,13 +676,13 @@ class AccountApprovalPageState extends State<AccountApprovalPage> {
         onTap: () {
           if (permanent) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => PatientFilesPage()),
+              MaterialPageRoute(builder: (context) => const PatientFilesPage()),
             );
           } else {
             Navigator.pop(context);
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => PatientFilesPage()),
+              MaterialPageRoute(builder: (context) => const PatientFilesPage()),
             );
           }
         },
@@ -694,14 +694,14 @@ class AccountApprovalPageState extends State<AccountApprovalPage> {
           if (permanent) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                  builder: (context) => WaitingListPage(userRole: 'secretary')),
+                  builder: (context) => const WaitingListPage(userRole: 'secretary')),
             );
           } else {
             Navigator.pop(context);
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => WaitingListPage(userRole: 'secretary')),
+                  builder: (context) => const WaitingListPage(userRole: 'secretary')),
             );
           }
         },
@@ -712,13 +712,13 @@ class AccountApprovalPageState extends State<AccountApprovalPage> {
         onTap: () {
           if (permanent) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => SecretaryDashboard()),
+              MaterialPageRoute(builder: (context) => const SecretaryDashboard()),
             );
           } else {
             Navigator.pop(context);
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => SecretaryDashboard()),
+              MaterialPageRoute(builder: (context) => const SecretaryDashboard()),
             );
           }
         },
@@ -729,13 +729,13 @@ class AccountApprovalPageState extends State<AccountApprovalPage> {
         onTap: () {
           if (permanent) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => LoginPage()),
+              MaterialPageRoute(builder: (context) => const LoginPage()),
             );
           } else {
             Navigator.pop(context);
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => LoginPage()),
+              MaterialPageRoute(builder: (context) => const LoginPage()),
             );
           }
         },
@@ -799,7 +799,7 @@ class AccountApprovalPageState extends State<AccountApprovalPage> {
   String userImageSafe(String? imageData) {
     if (imageData == null || imageData.isEmpty) return '';
     try {
-      final prefix = 'data:image/jpeg;base64,';
+      const prefix = 'data:image/jpeg;base64,';
       return imageData.startsWith(prefix)
           ? imageData.substring(prefix.length)
           : imageData;
