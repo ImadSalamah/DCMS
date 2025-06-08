@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'admin_sidebar.dart';
 
 class AdminManageGroupsPage extends StatefulWidget {
   const AdminManageGroupsPage({super.key});
@@ -304,323 +305,377 @@ class AdminManageGroupsPageState extends State<AdminManageGroupsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('إدارة الشعب السريرية'),
-        centerTitle: true,
-        actions: [
-          if (_editingGroupId != null)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: _resetForm,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isLargeScreen = constraints.maxWidth >= 900;
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            title: const Text('إدارة الشعب السريرية'),
+            backgroundColor: const Color(0xFF2A7A94),
+            foregroundColor: Colors.white,
+            leading: isLargeScreen ? null : Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          drawer: isLargeScreen ? null : AdminSidebar(
+            primaryColor: const Color(0xFF2A7A94),
+            accentColor: const Color(0xFF4AB8D8),
+            userName: null,
+            userImageUrl: null,
+            onLogout: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.of(context).pushReplacementNamed('/');
+              }
+            },
+            parentContext: context,
+          ),
+          body: Row(
             children: [
-              // رقم الشعبة
-              TextFormField(
-                controller: _groupNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الشعبة',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value?.isEmpty ?? true ? 'مطلوب' : null,
-                onSaved: (value) => _groupNumber = value,
-              ),
-
-              const SizedBox(height: 20),
-
-              // اختيار المساق
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'اختر المساق',
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedCourse,
-                items: _courses.map<DropdownMenuItem<String>>((course) {
-                  return DropdownMenuItem<String>(
-                    value: course,
-                    child: Text(course),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedCourse = value),
-                validator: (value) => value == null ? 'مطلوب' : null,
-              ),
-
-              const SizedBox(height: 20),
-
-              // اختيار الطبيب المشرف
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'اختر الطبيب المشرف',
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedDoctorId,
-                items: _doctors.map<DropdownMenuItem<String>>((doctor) {
-                  return DropdownMenuItem<String>(
-                    value: doctor['id'] as String,
-                    child: Text('${doctor['name']} - ${doctor['specialty']}'),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedDoctorId = value),
-                validator: (value) => value == null ? 'مطلوب' : null,
-              ),
-
-              const SizedBox(height: 20),
-
-              // اختيار العيادة (من A إلى K)
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'اختر العيادة',
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedClinic,
-                items: _clinics.map<DropdownMenuItem<String>>((clinic) {
-                  return DropdownMenuItem<String>(
-                    value: clinic,
-                    child: Text(clinic),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedClinic = value),
-                validator: (value) => value == null ? 'مطلوب' : null,
-              ),
-
-              const SizedBox(height: 20),
-
-              // اختيار الوقت
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectTime(context, true),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'وقت البدء',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          _startTime != null
-                              ? '${_startTime!.hour}:${_startTime!.minute.toString().padLeft(2, '0')}'
-                              : 'اختر الوقت',
-                        ),
-                      ),
-                    ),
+              if (isLargeScreen)
+                SizedBox(
+                  width: 260,
+                  child: AdminSidebar(
+                    primaryColor: const Color(0xFF2A7A94),
+                    accentColor: const Color(0xFF4AB8D8),
+                    userName: null,
+                    userImageUrl: null,
+                    onLogout: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (mounted) {
+                        Navigator.of(context).pushReplacementNamed('/');
+                      }
+                    },
+                    parentContext: context,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectTime(context, false),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'وقت الانتهاء',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          _endTime != null
-                              ? '${_endTime!.hour}:${_endTime!.minute.toString().padLeft(2, '0')}'
-                              : 'اختر الوقت',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // اختيار الأيام
-              const Text(
-                'أيام المحاضرة:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8.0,
-                children: _days.map((day) {
-                  return FilterChip(
-                    label: Text(day),
-                    selected: _selectedDays.contains(day),
-                    onSelected: (selected) => _toggleDay(day),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 20),
-
-              // اختيار الطلاب
-              const Text(
-                'اختر الطلاب:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-
-              // حقل البحث عن الطلاب
-              TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'ابحث عن طالب',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
                 ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // قائمة الطلاب مع إمكانية التصفية
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: _filteredStudents.isEmpty
-                    ? const Center(child: Text('لا توجد نتائج'))
-                    : ListView.builder(
-                        itemCount: _filteredStudents.length,
-                        itemBuilder: (context, index) {
-                          final student = _filteredStudents[index];
-                          return CheckboxListTile(
-                            title: Text('${student['name']}'),
-                            subtitle: Text(
-                                '${student['studentId']} - ${student['email']}'),
-                            value: _selectedStudents.contains(student['id']),
-                            onChanged: (value) {
-                              setState(() {
-                                if (value == true) {
-                                  _selectedStudents
-                                      .add(student['id'] as String);
-                                } else {
-                                  _selectedStudents.remove(student['id']);
-                                }
-                              });
-                            },
-                          );
-                        },
-                      ),
-              ),
-
-              const SizedBox(height: 30),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: _saveGroup,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 15),
-                    ),
-                    child: Text(_editingGroupId == null
-                        ? 'إنشاء شعبة'
-                        : 'تحديث الشعبة'),
-                  ),
-                  if (_editingGroupId != null)
-                    ElevatedButton(
-                      onPressed: _resetForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 15),
-                      ),
-                      child: const Text('إلغاء'),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 40),
-
-              const Text(
-                'الشعب الحالية:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-
-              // عرض الشعب الحالية
-              StreamBuilder(
-                stream: _dbRef.child('studyGroups').onValue,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final data =
-                      snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
-                  if (data == null || data.isEmpty) {
-                    return const Center(child: Text('لا توجد شعب مسجلة'));
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final key = data.keys.elementAt(index);
-                      final group = data[key] as Map;
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: ExpansionTile(
-                          title: Text(
-                              'الشعبة ${group['groupNumber']} - ${group['courseName']}'),
-                          subtitle: Text('بإشراف د. ${group['doctorName']}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _editGroup(group, key),
-                              ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteGroup(key),
-                              ),
-                            ],
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // رقم الشعبة
+                        TextFormField(
+                          controller: _groupNumberController,
+                          decoration: const InputDecoration(
+                            labelText: 'رقم الشعبة',
+                            border: OutlineInputBorder(),
                           ),
+                          validator: (value) =>
+                              value?.isEmpty ?? true ? 'مطلوب' : null,
+                          onSaved: (value) => _groupNumber = value,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // اختيار المساق
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'اختر المساق',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _selectedCourse,
+                          items: _courses.map<DropdownMenuItem<String>>((course) {
+                            return DropdownMenuItem<String>(
+                              value: course,
+                              child: Text(course),
+                            );
+                          }).toList(),
+                          onChanged: (value) =>
+                              setState(() => _selectedCourse = value),
+                          validator: (value) => value == null ? 'مطلوب' : null,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // اختيار الطبيب المشرف
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'اختر الطبيب المشرف',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _doctors.any((d) => d['id'] == _selectedDoctorId)
+                              ? _selectedDoctorId
+                              : null,
+                          items: _doctors.isEmpty
+                              ? [
+                                  const DropdownMenuItem<String>(
+                                    value: null,
+                                    child: Text('لا يوجد أطباء متاحين'),
+                                  ),
+                                ]
+                              : _doctors.map<DropdownMenuItem<String>>((doctor) {
+                                  return DropdownMenuItem<String>(
+                                    value: doctor['id'] as String,
+                                    child: Text(
+                                        '${doctor['name']} - ${doctor['specialty']}'),
+                                  );
+                                }).toList(),
+                          onChanged: _doctors.isEmpty
+                              ? null
+                              : (value) => setState(() => _selectedDoctorId = value),
+                          validator: (value) => value == null ? 'مطلوب' : null,
+                          disabledHint: const Text('لا يوجد أطباء متاحين'),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // اختيار العيادة (من A إلى K)
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'اختر العيادة',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _selectedClinic,
+                          items: _clinics.map<DropdownMenuItem<String>>((clinic) {
+                            return DropdownMenuItem<String>(
+                              value: clinic,
+                              child: Text(clinic),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setState(() => _selectedClinic = value),
+                          validator: (value) => value == null ? 'مطلوب' : null,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // اختيار الوقت
+                        Row(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                      'الوقت: ${group['startTime']} - ${group['endTime']}'),
-                                  Text(
-                                      'الأيام: ${(group['days'] as List?)?.join('، ') ?? 'غير محدد'}'),
-                                  Text('العيادة: ${group['clinic']}'),
-                                  const SizedBox(height: 10),
-                                  const Text('الطلاب:',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  ...(group['students'] as Map? ?? {})
-                                      .values
-                                      .map<Widget>((student) {
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 4),
-                                      child: Text(
-                                          ' - ${student['name']} (${student['studentId']})'),
-                                    );
-                                  }),
-                                ],
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _selectTime(context, true),
+                                child: InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'وقت البدء',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  child: Text(
+                                    _startTime != null
+                                        ? '${_startTime!.hour}:${_startTime!.minute.toString().padLeft(2, '0')}'
+                                        : 'اختر الوقت',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _selectTime(context, false),
+                                child: InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'وقت الانتهاء',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  child: Text(
+                                    _endTime != null
+                                        ? '${_endTime!.hour}:${_endTime!.minute.toString().padLeft(2, '0')}'
+                                        : 'اختر الوقت',
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
+                        const SizedBox(height: 20),
+
+                        // اختيار الأيام
+                        const Text(
+                          'أيام المحاضرة:',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8.0,
+                          children: _days.map((day) {
+                            return FilterChip(
+                              label: Text(day),
+                              selected: _selectedDays.contains(day),
+                              onSelected: (selected) => _toggleDay(day),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // اختيار الطلاب
+                        const Text(
+                          'اختر الطلاب:',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // حقل البحث عن الطلاب
+                        TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            labelText: 'ابحث عن طالب',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // قائمة الطلاب مع إمكانية التصفية
+                        Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: _filteredStudents.isEmpty
+                              ? const Center(child: Text('لا توجد نتائج'))
+                              : ListView.builder(
+                                  itemCount: _filteredStudents.length,
+                                  itemBuilder: (context, index) {
+                                    final student = _filteredStudents[index];
+                                    return CheckboxListTile(
+                                      title: Text('${student['name']}'),
+                                      subtitle: Text(
+                                          '${student['studentId']} - ${student['email']}'),
+                                      value: _selectedStudents.contains(student['id']),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            _selectedStudents
+                                                .add(student['id'] as String);
+                                          } else {
+                                            _selectedStudents.remove(student['id']);
+                                          }
+                                        });
+                                      },
+                                    );
+                                  },
+                                ),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _saveGroup,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 30, vertical: 15),
+                              ),
+                              child: Text(_editingGroupId == null
+                                  ? 'إنشاء شعبة'
+                                  : 'تحديث الشعبة'),
+                            ),
+                            if (_editingGroupId != null)
+                              ElevatedButton(
+                                onPressed: _resetForm,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 30, vertical: 15),
+                                ),
+                                child: const Text('إلغاء'),
+                              ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        const Text(
+                          'الشعب الحالية:',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+
+                        // عرض الشعب الحالية
+                        StreamBuilder(
+                          stream: _dbRef.child('studyGroups').onValue,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+
+                            final data =
+                                snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
+                            if (data == null || data.isEmpty) {
+                              return const Center(child: Text('لا توجد شعب مسجلة'));
+                            }
+
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: data.length,
+                              itemBuilder: (context, index) {
+                                final key = data.keys.elementAt(index);
+                                final group = data[key] as Map;
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: ExpansionTile(
+                                    title: Text(
+                                        'الشعبة ${group['groupNumber']} - ${group['courseName']}'),
+                                    subtitle: Text('بإشراف د. ${group['doctorName']}'),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          onPressed: () => _editGroup(group, key),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _deleteGroup(key),
+                                        ),
+                                      ],
+                                    ),
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                                'الوقت: ${group['startTime']} - ${group['endTime']}'),
+                                            Text(
+                                                'الأيام: ${(group['days'] as List?)?.join('، ') ?? 'غير محدد'}'),
+                                            Text('العيادة: ${group['clinic']}'),
+                                            const SizedBox(height: 10),
+                                            const Text('الطلاب:',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold)),
+                                            ...(group['students'] as Map? ?? {})
+                                                .values
+                                                .map<Widget>((student) {
+                                              return Padding(
+                                                padding: const EdgeInsets.symmetric(
+                                                    vertical: 4),
+                                                child: Text(
+                                                    ' - ${student['name']} (${student['studentId']})'),
+                                              );
+                                            }),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ), // End Expanded
+            ], // End Row children
+          ), // End Row
+        ); // End Scaffold
+      }, // End LayoutBuilder builder
+    ); // End LayoutBuilder
+  } // End build
 }

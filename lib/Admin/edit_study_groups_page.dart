@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'admin_sidebar.dart';
 
 class EditStudyGroupsPage extends StatefulWidget {
   const EditStudyGroupsPage({super.key});
@@ -15,6 +16,8 @@ class EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _studyGroups = [];
   List<Map<String, dynamic>> _allStudents = [];
+  final List<Map<String, dynamic>> _doctorsList = []; // قائمة الأطباء
+  String? _selectedDoctorId; // معرف الطبيب المحدد
 
   @override
   void initState() {
@@ -138,6 +141,33 @@ class EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                       );
                     }).toList(),
                   ),
+                  // دروب داون الطبيب
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                        labelText: 'اختر الطبيب المشرف',
+                        border: OutlineInputBorder()),
+                    value: _doctorsList.any((d) => d['id'] == _selectedDoctorId)
+                        ? _selectedDoctorId
+                        : null,
+                    items: _doctorsList.isEmpty
+                        ? [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('لا يوجد أطباء متاحين'),
+                            ),
+                          ]
+                        : _doctorsList.map<DropdownMenuItem<String>>((doctor) {
+                            return DropdownMenuItem<String>(
+                              value: doctor['id'],
+                              child: Text(doctor['name']),
+                            );
+                          }).toList(),
+                    onChanged: _doctorsList.isEmpty
+                        ? null
+                        : (value) => setState(() => _selectedDoctorId = value),
+                    validator: (value) => value == null ? 'مطلوب' : null,
+                    disabledHint: const Text('لا يوجد أطباء متاحين'),
+                  ),
                 ],
               ),
             ),
@@ -156,7 +186,7 @@ class EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
                     selectedDays,
                   );
                   if (!mounted) return;
- if (!mounted) return;
+                  if (!mounted) return;
                   Navigator.pop(context);
                 },
                 child: const Text('حفظ التعديلات'),
@@ -311,27 +341,57 @@ class EditStudyGroupsPageState extends State<EditStudyGroupsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('إدارة الشعب الدراسية'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _studyGroups.isEmpty
-              ? const Center(child: Text('لا توجد شعب دراسية'))
-              : ListView.builder(
-                  itemCount: _studyGroups.length,
-                  itemBuilder: (context, index) {
-                    final group = _studyGroups[index];
-                    return _buildGroupCard(group);
-                  },
+    final isLargeScreen = MediaQuery.of(context).size.width >= 900;
+    const Color primaryColor = Color(0xFF2A7A94);
+    const Color accentColor = Color(0xFF4AB8D8);
+    return Directionality(
+      textDirection: TextDirection.rtl, // Adjust as needed for localization
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('إدارة الشعب الدراسية'),
+          backgroundColor: primaryColor,
+        ),
+        drawer: !isLargeScreen
+            ? AdminSidebar(
+                primaryColor: primaryColor,
+                accentColor: accentColor,
+                parentContext: context,
+              )
+            : null,
+        endDrawer: !isLargeScreen
+            ? AdminSidebar(
+                primaryColor: primaryColor,
+                accentColor: accentColor,
+                parentContext: context,
+              )
+            : null,
+        body: Row(
+          children: [
+            if (isLargeScreen)
+              SizedBox(
+                width: 250,
+                child: AdminSidebar(
+                  primaryColor: primaryColor,
+                  accentColor: accentColor,
+                  parentContext: context,
                 ),
+              ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _studyGroups.isEmpty
+                      ? const Center(child: Text('لا توجد شعب دراسية'))
+                      : ListView.builder(
+                          itemCount: _studyGroups.length,
+                          itemBuilder: (context, index) {
+                            final group = _studyGroups[index];
+                            return _buildGroupCard(group);
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

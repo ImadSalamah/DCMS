@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
+import '../dashboard/student_dashboard.dart';
 
 class PatientFilesPage extends StatefulWidget {
   const PatientFilesPage({super.key});
@@ -12,6 +13,7 @@ class PatientFilesPage extends StatefulWidget {
 
 class _PatientFilesPageState extends State<PatientFilesPage> {
   final Color primaryColor = const Color(0xFF2A7A94);
+  final Color accentColor = const Color(0xFF4AB8D8);
   late DatabaseReference _usersRef;
   late DatabaseReference _waitingListRef;
 
@@ -20,7 +22,6 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
   List<Map<String, dynamic>> waitingList = [];
   List<Map<String, dynamic>> filteredWaitingList = [];
   bool _isLoading = true;
-  bool _hasError = false;
   final TextEditingController _searchController = TextEditingController();
 
   final Map<String, Map<String, String>> _translations = {
@@ -70,13 +71,11 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
         waitingList = _parseWaitingSnapshot(waitingSnapshot);
         filteredWaitingList = List.from(waitingList);
         _isLoading = false;
-        _hasError = false;
       });
     } catch (e) {
       debugPrint('Error loading data: $e');
       setState(() {
         _isLoading = false;
-        _hasError = true;
       });
     }
   }
@@ -200,223 +199,179 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
     ].join(' ');
   }
 
-  Future<void> _addToWaitingList(String userId, Map<String, dynamic> userData) async {
-    try {
-      final birthDate = _parseBirthDate(userData['birthDate']);
-      final age = birthDate != null ? _calculateAgeFromDate(birthDate) : 0;
-
-      await _waitingListRef.child(userId).set({
-        'name': _getFullName(userData),
-        'phone': userData['phone'] ?? '',
-        'age': age,
-        'timestamp': ServerValue.timestamp,
-      });
-
-      setState(() {
-        waitingList.add({
-          'id': userId,
-          'name': _getFullName(userData),
-          'phone': userData['phone'] ?? '',
-          'age': age,
-        });
-        filteredWaitingList = List.from(waitingList);
-      });
-    } catch (e) {
-      debugPrint('Error adding to waiting list: $e');
-    }
-  }
-
-  Future<void> _removeFromWaitingList(String userId) async {
-    try {
-      final user = waitingList.firstWhere((u) => u['id'] == userId);
-      await _waitingListRef.child(userId).remove();
-
-      if (!mounted) return;
-      setState(() {
-        waitingList.removeWhere((user) => user['id'] == userId);
-        filteredWaitingList = List.from(waitingList);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${_translate(context, 'remove_from_waiting_list')} ${user['name']}'),
-              backgroundColor: Colors.orange,
-            )
-        );
-      }
-    } catch (e) {
-      debugPrint('Error removing from waiting list: $e');
-      if (!mounted) return;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_translate(context, 'error_loading')),
-              backgroundColor: Colors.red,
-            )
-        );
-      }
-    }
-  }
-
-  bool _isInWaitingList(String userId) {
-    return waitingList.any((user) => user['id'] == userId);
-  }
-
-  Widget _buildPatientCard(Map<String, dynamic> user, BuildContext context) {
-    final isInWaitingList = _isInWaitingList(user['id']);
-    final fullName = _getFullName(user);
-    final phone = user['phone']?.toString() ?? '';
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fullName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'ID: ${user['idNumber']}',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                Icon(
-                  Icons.person,
-                  color: primaryColor,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.phone, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(phone),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.cake, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(_formatAge(context, user['birthDate'])),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (isInWaitingList) {
-                    _removeFromWaitingList(user['id']);
-                  } else {
-                    _addToWaitingList(user['id'], user);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isInWaitingList ? Colors.red : primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: Text(
-                  isInWaitingList
-                      ? _translate(context, 'remove_from_waiting_list')
-                      : _translate(context, 'add_to_waiting_list'),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 50, color: Colors.red),
-          const SizedBox(height: 20),
-          Text(
-            _translate(context, 'error_loading'),
-            style: const TextStyle(fontSize: 18),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _loadData,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: Text(
-              _translate(context, 'retry'),
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchField(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: _translate(context, 'search_hint'),
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          filled: true,
-          fillColor: Colors.grey[200],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_translate(context, 'patient_files')),
-        backgroundColor: primaryColor,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _hasError
-          ? _buildErrorWidget()
-          : Column(
-        children: [
-          _buildSearchField(context),
-          Expanded(
-            child: filteredUsers.isEmpty
-                ? Center(child: Text(_translate(context, 'no_patients')))
-                : ListView.builder(
-              itemCount: filteredUsers.length,
-              itemBuilder: (context, index) {
-                return _buildPatientCard(filteredUsers[index], context);
-              },
-            ),
+    final isLargeScreen = MediaQuery.of(context).size.width >= 900;
+    return Directionality(
+      textDirection: Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode == 'ar'
+          ? TextDirection.rtl
+          : TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_translate(context, 'patient_files'), style: const TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: primaryColor,
+          centerTitle: true,
+        ),
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(color: primaryColor),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.folder_shared, size: 48, color: Colors.white),
+                    const SizedBox(height: 10),
+                    Text('ملفات المرضى', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.home, color: primaryColor),
+                title: const Text('الرئيسية'),
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const StudentDashboard()),
+                    (route) => false,
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+        ),
+        endDrawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(color: primaryColor),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.folder_shared, size: 48, color: Colors.white),
+                    const SizedBox(height: 10),
+                    Text('ملفات المرضى', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.home, color: primaryColor),
+                title: const Text('الرئيسية'),
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const StudentDashboard()),
+                    (route) => false,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Row(
+                children: [
+                  if (isLargeScreen)
+                    Container(
+                      width: 250,
+                      color: primaryColor.withOpacity(0.08),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 32),
+                          Icon(Icons.folder_shared, size: 48, color: primaryColor),
+                          const SizedBox(height: 10),
+                          Text('ملفات المرضى', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 18)),
+                          const Divider(),
+                          ListTile(
+                            leading: Icon(Icons.home, color: primaryColor),
+                            title: const Text('الرئيسية'),
+                            onTap: () {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => const StudentDashboard()),
+                                (route) => false,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              labelText: _translate(context, 'search_hint'),
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onChanged: (value) => _filterUsers(),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: ListView(
+                              children: [
+                                Text(_translate(context, 'all_patients'), style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+                                const SizedBox(height: 8),
+                                ...filteredUsers.map((user) => Card(
+                                      color: Colors.white,
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: accentColor,
+                                          child: Icon(Icons.person, color: Colors.white),
+                                        ),
+                                        title: Text(_getFullName(user), style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                                        subtitle: Text('${_translate(context, 'age')}: ${_formatAge(context, user['birthDate'])}'),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.add, color: Colors.green),
+                                          onPressed: () {
+                                            // Add to waiting list logic
+                                          },
+                                        ),
+                                      ),
+                                    )),
+                                const SizedBox(height: 24),
+                                Text(_translate(context, 'waiting_list'), style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+                                const SizedBox(height: 8),
+                                ...filteredWaitingList.map((user) => Card(
+                                      color: Colors.white,
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: Colors.orange,
+                                          child: Icon(Icons.timer, color: Colors.white),
+                                        ),
+                                        title: Text(user['name'] ?? '', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                                        subtitle: Text('${_translate(context, 'phone')}: ${user['phone'] ?? ''}'),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.remove_circle, color: Colors.red),
+                                          onPressed: () {
+                                            // Remove from waiting list logic
+                                          },
+                                        ),
+                                      ),
+                                    )),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

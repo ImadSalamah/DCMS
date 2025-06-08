@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -8,9 +7,9 @@ import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../Admin/add_user_page.dart';
 import '../Admin/edit_user_page.dart';
-import '../Secretry/users_list_page.dart';
 import '../Admin/add_student.dart';
 import '../Admin/manage_study_groups_page.dart';
+import '../Admin/admin_sidebar.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -32,7 +31,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   List<Map<String, dynamic>> allUsers = [];
   bool _isLoading = true;
   bool _hasError = false;
-  bool _isWebDrawerOpen = false;
 
   final Map<String, Map<String, String>> _translations = {
     'admin_dashboard': {'ar': 'لوحة الإدارة', 'en': 'Admin Dashboard'},
@@ -79,8 +77,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _loadAdminData();
     _loadAllUsers();
   }
-
-  bool get isWeb => kIsWeb;
 
   void _initializeReferences() {
     _usersRef = FirebaseDatabase.instance.ref('users');
@@ -206,473 +202,190 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Future<void> _showAddUserDialog() async {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final permissionsController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(_translate(context, 'add_user')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'email'),
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isLargeScreen = constraints.maxWidth >= 900;
+        return Directionality(
+          textDirection:
+              _isArabic(context) ? TextDirection.rtl : TextDirection.ltr,
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              title: Text(_translate(context, 'app_name')),
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              leading: isLargeScreen
+                  ? null
+                  : Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.language, color: Colors.white),
+                  onPressed: () =>
+                      Provider.of<LanguageProvider>(context, listen: false)
+                          .toggleLanguage(),
                 ),
-              ),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'password'),
+                IconButton(
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                )
+              ],
+            ),
+            drawer: isLargeScreen
+                ? null
+                : AdminSidebar(
+                    primaryColor: primaryColor,
+                    accentColor: accentColor,
+                    userName: _userName,
+                    userImageUrl: _userImageUrl,
+                    onLogout: _logout,
+                    parentContext: context,
+                  ),
+            body: Row(
+              children: [
+                if (isLargeScreen)
+                  SizedBox(
+                    width: 260,
+                    child: AdminSidebar(
+                      primaryColor: primaryColor,
+                      accentColor: accentColor,
+                      userName: _userName,
+                      userImageUrl: _userImageUrl,
+                      onLogout: _logout,
+                      parentContext: context,
+                    ),
+                  ),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _hasError
+                          ? _buildErrorWidget(context)
+                          : _buildMainContent(context),
                 ),
-              ),
-              TextField(
-                controller: permissionsController,
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'permissions'),
-                  hintText: 'admin,doctor,student',
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(_translate(context, 'cancel')),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                // Implement user creation logic
-                if (!mounted) return;
-                Navigator.pop(context);
-              },
-              child: Text(_translate(context, 'save')),
-            ),
-          ],
         );
       },
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Removed unused variables 'languageProvider' and 'isSmallScreen'
-    return Directionality(
-      textDirection: _isArabic(context) ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        appBar: isWeb ? _buildWebAppBar(context) : _buildMobileAppBar(context),
-        body: isWeb ? _buildWebBody(context) : _buildMobileBody(context),
-        bottomNavigationBar: isWeb ? null : _buildBottomNavigation(context),
-        drawer: isWeb ? null : _buildMobileDrawer(context),
-      ),
-    );
-  }
-
-  AppBar _buildWebAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: primaryColor,
-      title: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              setState(() {
-                _isWebDrawerOpen = !_isWebDrawerOpen;
-              });
-            },
-          ),
-          Expanded(
-            child: Text(
-              _translate(context, 'app_name'),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.language, color: Colors.white),
-          onPressed: () => Provider.of<LanguageProvider>(context, listen: false)
-              .toggleLanguage(),
-        ),
-        IconButton(
-          onPressed: _logout,
-          icon: const Icon(Icons.logout, color: Colors.white),
-        )
-      ],
-    );
-  }
-
-  AppBar _buildMobileAppBar(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 350;
-
-    return AppBar(
-      backgroundColor: primaryColor,
-      title: Text(
-        _translate(context, 'app_name'),
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: isSmallScreen ? 16 : 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.language, color: Colors.white),
-          onPressed: () => Provider.of<LanguageProvider>(context, listen: false)
-              .toggleLanguage(),
-        ),
-        IconButton(
-          onPressed: _logout,
-          icon: const Icon(Icons.logout, color: Colors.white),
-        )
-      ],
-    );
-  }
-
-  Widget _buildWebBody(BuildContext context) {
-    return Row(
-      children: [
-        // Web sidebar
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: _isWebDrawerOpen ? 250 : 0,
-          color: webSidebarColor,
-          child: _isWebDrawerOpen ? _buildWebSidebar(context) : Container(),
-        ),
-        // Main content
-        Expanded(
-          child: _buildMainContent(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMobileBody(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (_hasError) {
-      return _buildErrorWidget(context);
-    }
-
-    return _buildMainContent(context);
   }
 
   Widget _buildMainContent(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.width < 350;
 
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-          ),
-        ),
-        SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom + 20),
-          child: Column(
-            children: [
-              // User info section
-              _buildUserInfoCard(context, isSmallScreen),
-
-              // Main feature boxes
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2, // صفين فقط
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: isWeb ? 1.3 : 1.1,
-                  children: [
-                    // في ملف admin_dashboard.dart
-// أضف هذا في قائمة الميزات
-                    _buildFeatureBox(
-                      context,
-                      Icons.people,
-                      _translate(context, 'manage_users'),
-                      Colors.blue,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditUserPage(
-                              user: allUsers.isNotEmpty ? allUsers.first : {},
-                              usersList: allUsers,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureBox(
-                      context,
-                      Icons.person_add,
-                      _translate(context, 'add_user'),
-                      Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const AddUserPage()),
-                        );
-                      },
-                    ),
-                    _buildFeatureBox(
-                      context,
-                      Icons.person_add,
-                      _translate(context, 'add_user_student'),
-                      Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const AddDentalStudentPage()),
-                        );
-                      },
-                    ),
-
-                    _buildFeatureBox(
-                      context,
-                      Icons.group,
-                      _translate(context, 'manage_study_groups'),
-                      Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const AdminManageGroupsPage()),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWebSidebar(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        DrawerHeader(
-          decoration: BoxDecoration(
-            color: primaryColor,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _userImageUrl.isNotEmpty
-                  ? CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withValues(alpha: 0.8),
-                      child: ClipOval(
-                        child: Image.memory(
-                          base64Decode(_userImageUrl.replaceFirst(
-                              'data:image/jpeg;base64,', '')),
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    )
-                  : CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withValues(alpha: 0.8),
-                      child: Icon(
-                        Icons.person,
-                        size: 30,
-                        color: accentColor,
-                      ),
-                    ),
-              const SizedBox(height: 10),
-              Text(
-                _userName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                _translate(context, 'admin'),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-        ListTile(
-          leading: Icon(Icons.home, color: primaryColor),
-          title: Text(_translate(context, 'home')),
-          onTap: () {
-            // Navigate to home
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.people, color: primaryColor),
-          title: Text(_translate(context, 'manage_users')),
-          onTap: () {
-            _showUsersList(context);
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.person_add, color: primaryColor),
-          title: Text(_translate(context, 'add_user')),
-          onTap: () {
-            Navigator.pop(context); // لإغلاق الجارور أولاً
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddUserPage()),
-            );
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.settings, color: primaryColor),
-          title: Text(_translate(context, 'settings')),
-          onTap: () {
-            // Navigate to settings
-          },
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.logout, color: Colors.red),
-          title: Text(_translate(context, 'logout')),
-          onTap: _logout,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMobileDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: primaryColor,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 700;
+        final gridCount = isWide ? 3 : 2;
+        final maxContentWidth = 700.0;
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: Stack(
               children: [
-                _userImageUrl.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white.withValues(alpha: 0.8),
-                        child: ClipOval(
-                          child: Image.memory(
-                            base64Decode(_userImageUrl.replaceFirst(
-                                'data:image/jpeg;base64,', '')),
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      )
-                    : CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white.withValues(alpha: 0.8),
-                        child: Icon(
-                          Icons.person,
-                          size: 30,
-                          color: accentColor,
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                  ),
+                ),
+                SingleChildScrollView(
+                  padding:
+                      EdgeInsets.only(bottom: mediaQuery.padding.bottom + 20),
+                  child: Column(
+                    children: [
+                      // User info section
+                      _buildUserInfoCard(context, isSmallScreen),
+
+                      // Main feature boxes
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: gridCount,
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 1.1,
+                          children: [
+                            _buildFeatureBox(
+                              context,
+                              Icons.people,
+                              _translate(context, 'manage_users'),
+                              Colors.blue,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditUserPage(
+                                      user: allUsers.isNotEmpty
+                                          ? allUsers.first
+                                          : {},
+                                      usersList: allUsers,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildFeatureBox(
+                              context,
+                              Icons.person_add,
+                              _translate(context, 'add_user'),
+                              Colors.green,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AddUserPage()),
+                                );
+                              },
+                            ),
+                            _buildFeatureBox(
+                              context,
+                              Icons.person_add,
+                              _translate(context, 'add_user_student'),
+                              Colors.green,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AddDentalStudentPage()),
+                                );
+                              },
+                            ),
+                            _buildFeatureBox(
+                              context,
+                              Icons.group,
+                              _translate(context, 'manage_study_groups'),
+                              Colors.green,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AdminManageGroupsPage()),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                const SizedBox(height: 10),
-                Text(
-                  _userName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  _translate(context, 'admin'),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          ListTile(
-            leading: Icon(Icons.home, color: primaryColor),
-            title: Text(_translate(context, 'home')),
-            onTap: () {
-              Navigator.pop(context);
-              // Navigate to home
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.people, color: primaryColor),
-            title: Text(_translate(context, 'manage_users')),
-            onTap: () {
-              Navigator.pop(context);
-              _showUsersList(context);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.person_add, color: primaryColor),
-            title: Text(_translate(context, 'add_user')),
-            onTap: () {
-              Navigator.pop(context);
-              _showAddUserDialog();
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.settings, color: primaryColor),
-            title: Text(_translate(context, 'settings')),
-            onTap: () {
-              Navigator.pop(context);
-              // Navigate to settings
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(_translate(context, 'logout')),
-            onTap: () {
-              Navigator.pop(context);
-              _logout();
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -792,13 +505,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showUsersList(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const UsersListPage()),
-    );
-  }
-
   Widget _buildFeatureBox(
     BuildContext context,
     IconData icon,
@@ -825,12 +531,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
-                  size: isWeb ? 30 : (isSmallScreen ? 24 : 30),
+                  size: isSmallScreen ? 24 : 30,
                   color: color,
                 ),
               ),
@@ -840,7 +546,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: isWeb ? 16 : (isSmallScreen ? 14 : 16),
+                    fontSize: isSmallScreen ? 14 : 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -850,84 +556,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigation(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final isSmallScreen = mediaQuery.size.width < 350;
-    final isArabic = _isArabic(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        border:
-            Border(top: BorderSide(color: Colors.grey.shade300, width: 0.5)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60 + mediaQuery.padding.bottom,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildBottomNavItem(
-                    context, Icons.home, 'home', isSmallScreen, isArabic),
-                _buildBottomNavItem(context, Icons.settings, 'settings',
-                    isSmallScreen, isArabic),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem(
-    BuildContext context,
-    IconData icon,
-    String labelKey,
-    bool isSmallScreen,
-    bool isArabic,
-  ) {
-    final text = _translate(context, labelKey);
-
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Handle navigation
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: isSmallScreen ? 20 : 24,
-                  color: primaryColor,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: isArabic
-                        ? (isSmallScreen ? 8 : 10)
-                        : (isSmallScreen ? 9 : 11),
-                    color: primaryColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
           ),
         ),
       ),

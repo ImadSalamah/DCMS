@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'admin_sidebar.dart';
 
 class AddUserPage extends StatefulWidget {
   const AddUserPage({super.key});
@@ -505,359 +506,401 @@ class _AddUserPageState extends State<AddUserPage> {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-
-    return Directionality(
-      textDirection: languageProvider.isEnglish ? TextDirection.ltr : TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: Text(_translate('add_user_title')),
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.language),
-              onPressed: () {
-                languageProvider.toggleLanguage();
-              },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isLargeScreen = constraints.maxWidth >= 900;
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            title: Text(_translate('add_user_title')),
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            leading: isLargeScreen ? null : Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // صورة الملف الشخصي
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      border: Border.all(color: primaryColor),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: _buildImageWidget(),
-                    ),
+          ),
+          drawer: isLargeScreen ? null : AdminSidebar(
+            primaryColor: primaryColor,
+            accentColor: accentColor,
+            userName: null,
+            userImageUrl: null,
+            onLogout: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.of(context).pushReplacementNamed('/');
+              }
+            },
+            parentContext: context,
+          ),
+          body: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isLargeScreen)
+                SizedBox(
+                  width: 260,
+                  child: AdminSidebar(
+                    primaryColor: primaryColor,
+                    accentColor: accentColor,
+                    userName: null,
+                    userImageUrl: null,
+                    onLogout: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (mounted) {
+                        Navigator.of(context).pushReplacementNamed('/');
+                      }
+                    },
+                    parentContext: context,
                   ),
                 ),
-                const SizedBox(height: 30),
-
-                // قسم المعلومات الشخصية
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        _translate('personal_info'),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // حقول الأسماء
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextFormField(
-                              controller: _firstNameController,
-                              labelText: '${_translate('first_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return _translate('validation_required');
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _buildTextFormField(
-                              controller: _fatherNameController,
-                              labelText: '${_translate('father_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return _translate('validation_required');
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextFormField(
-                              controller: _grandfatherNameController,
-                              labelText: '${_translate('grandfather_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return _translate('validation_required');
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _buildTextFormField(
-                              controller: _familyNameController,
-                              labelText: '${_translate('family_name')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person, color: accentColor),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return _translate('validation_required');
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-
-                      // اسم المستخدم وتاريخ الميلاد
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextFormField(
-                              controller: _usernameController,
-                              labelText: '${_translate('username')} ${_translate('required_field')}',
-                              prefixIcon: Icon(Icons.person_pin, color: accentColor),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return _translate('validation_required');
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectBirthDate,
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: '${_translate('birth_date')} ${_translate('required_field')}',
-                                  labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
-                                  prefixIcon: Icon(Icons.calendar_today, color: accentColor),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide(color: Colors.grey.shade300),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // صورة الملف الشخصي
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                width: 150,
+                                height: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  border: Border.all(color: primaryColor),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Text(
-                                  _birthDate == null
-                                      ? _translate('select_date')
-                                      : DateFormat('yyyy-MM-dd').format(_birthDate!),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: _birthDate == null ? Colors.grey[600] : Colors.black,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: _buildImageWidget(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // قسم المعلومات الشخصية
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    _translate('personal_info'),
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+
+                                  // حقول الأسماء
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildTextFormField(
+                                          controller: _firstNameController,
+                                          labelText: '${_translate('first_name')} ${_translate('required_field')}',
+                                          prefixIcon: Icon(Icons.person, color: accentColor),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return _translate('validation_required');
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _buildTextFormField(
+                                          controller: _fatherNameController,
+                                          labelText: '${_translate('father_name')} ${_translate('required_field')}',
+                                          prefixIcon: Icon(Icons.person, color: accentColor),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return _translate('validation_required');
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildTextFormField(
+                                          controller: _grandfatherNameController,
+                                          labelText: '${_translate('grandfather_name')} ${_translate('required_field')}',
+                                          prefixIcon: Icon(Icons.person, color: accentColor),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return _translate('validation_required');
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _buildTextFormField(
+                                          controller: _familyNameController,
+                                          labelText: '${_translate('family_name')} ${_translate('required_field')}',
+                                          prefixIcon: Icon(Icons.person, color: accentColor),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return _translate('validation_required');
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  // اسم المستخدم وتاريخ الميلاد
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildTextFormField(
+                                          controller: _usernameController,
+                                          labelText: '${_translate('username')} ${_translate('required_field')}',
+                                          prefixIcon: Icon(Icons.person_pin, color: accentColor),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return _translate('validation_required');
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: _selectBirthDate,
+                                          child: InputDecorator(
+                                            decoration: InputDecoration(
+                                              labelText: '${_translate('birth_date')} ${_translate('required_field')}',
+                                              labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
+                                              prefixIcon: Icon(Icons.calendar_today, color: accentColor),
+                                              filled: true,
+                                              fillColor: Colors.grey[50],
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                            ),
+                                            child: Text(
+                                              _birthDate == null
+                                                  ? _translate('select_date')
+                                                  : DateFormat('yyyy-MM-dd').format(_birthDate!),
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: _birthDate == null ? Colors.grey[600] : Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  // حقل الجنس (Radio Buttons)
+                                  _buildGenderRadioButtons(),
+                                  const SizedBox(height: 15),
+
+                                  // حقل نوع المستخدم (Dropdown)
+                                  _buildUserTypeDropdown(),
+                                  const SizedBox(height: 15),
+
+                                  // رقم الهاتف
+                                  _buildTextFormField(
+                                    controller: _phoneController,
+                                    labelText: '${_translate('phone')} ${_translate('required_field')}',
+                                    keyboardType: TextInputType.phone,
+                                    maxLength: 10,
+                                    prefixIcon: Icon(Icons.phone, color: accentColor),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return _translate('validation_required');
+                                      }
+                                      if (value.length < 10) {
+                                        return _translate('validation_phone_length');
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  // مكان السكن
+                                  _buildTextFormField(
+                                    controller: _addressController,
+                                    labelText: '${_translate('address')} ${_translate('required_field')}',
+                                    prefixIcon: Icon(Icons.location_on, color: accentColor),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return _translate('validation_required');
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  // رقم الهوية
+                                  _buildTextFormField(
+                                    controller: _idNumberController,
+                                    labelText: '${_translate('id_number')} ${_translate('required_field')}',
+                                    keyboardType: TextInputType.number,
+                                    maxLength: 9,
+                                    prefixIcon: Icon(Icons.credit_card, color: accentColor),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return _translate('validation_required');
+                                      }
+                                      if (value.length < 9) {
+                                        return _translate('validation_id_length');
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // قسم معلومات الحساب
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    _translate('account_info'),
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+
+                                  // كلمة المرور
+                                  _buildTextFormField(
+                                    controller: _passwordController,
+                                    labelText: '${_translate('password')} ${_translate('required_field')}',
+                                    obscureText: !_showPassword,
+                                    prefixIcon: Icon(Icons.lock, color: accentColor),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _showPassword ? Icons.visibility : Icons.visibility_off,
+                                        color: accentColor,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _showPassword = !_showPassword;
+                                        });
+                                      },
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return _translate('validation_required');
+                                      }
+                                      if (value.length < 6) {
+                                        return _translate('validation_password_length');
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  // تأكيد كلمة المرور
+                                  _buildTextFormField(
+                                    controller: _confirmPasswordController,
+                                    labelText: '${_translate('confirm_password')} ${_translate('required_field')}',
+                                    obscureText: !_showConfirmPassword,
+                                    prefixIcon: Icon(Icons.lock_outline, color: accentColor),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                                        color: accentColor,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _showConfirmPassword = !_showConfirmPassword;
+                                        });
+                                      },
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return _translate('validation_required');
+                                      }
+                                      if (value != _passwordController.text) {
+                                        return _translate('validation_password_match');
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // زر الإضافة
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _addUser,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : Text(
+                                  _translate('add_button'),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-
-                      // حقل الجنس (Radio Buttons)
-                      _buildGenderRadioButtons(),
-                      const SizedBox(height: 15),
-
-                      // حقل نوع المستخدم (Dropdown)
-                      _buildUserTypeDropdown(),
-                      const SizedBox(height: 15),
-
-                      // رقم الهاتف
-                      _buildTextFormField(
-                        controller: _phoneController,
-                        labelText: '${_translate('phone')} ${_translate('required_field')}',
-                        keyboardType: TextInputType.phone,
-                        maxLength: 10,
-                        prefixIcon: Icon(Icons.phone, color: accentColor),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _translate('validation_required');
-                          }
-                          if (value.length < 10) {
-                            return _translate('validation_phone_length');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 15),
-
-                      // مكان السكن
-                      _buildTextFormField(
-                        controller: _addressController,
-                        labelText: '${_translate('address')} ${_translate('required_field')}',
-                        prefixIcon: Icon(Icons.location_on, color: accentColor),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _translate('validation_required');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 15),
-
-                      // رقم الهوية
-                      _buildTextFormField(
-                        controller: _idNumberController,
-                        labelText: '${_translate('id_number')} ${_translate('required_field')}',
-                        keyboardType: TextInputType.number,
-                        maxLength: 9,
-                        prefixIcon: Icon(Icons.credit_card, color: accentColor),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _translate('validation_required');
-                          }
-                          if (value.length < 9) {
-                            return _translate('validation_id_length');
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // قسم معلومات الحساب
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        _translate('account_info'),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                            const SizedBox(height: 20),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // كلمة المرور
-                      _buildTextFormField(
-                        controller: _passwordController,
-                        labelText: '${_translate('password')} ${_translate('required_field')}',
-                        obscureText: !_showPassword,
-                        prefixIcon: Icon(Icons.lock, color: accentColor),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _showPassword ? Icons.visibility : Icons.visibility_off,
-                            color: accentColor,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showPassword = !_showPassword;
-                            });
-                          },
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _translate('validation_required');
-                          }
-                          if (value.length < 6) {
-                            return _translate('validation_password_length');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 15),
-
-                      // تأكيد كلمة المرور
-                      _buildTextFormField(
-                        controller: _confirmPasswordController,
-                        labelText: '${_translate('confirm_password')} ${_translate('required_field')}',
-                        obscureText: !_showConfirmPassword,
-                        prefixIcon: Icon(Icons.lock_outline, color: accentColor),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                            color: accentColor,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showConfirmPassword = !_showConfirmPassword;
-                            });
-                          },
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _translate('validation_required');
-                          }
-                          if (value != _passwordController.text) {
-                            return _translate('validation_password_match');
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // زر الإضافة
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _addUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                      _translate('add_button'),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+              ), // End Expanded
+            ], // End children of Row
+          ), // End Row
+        ); // End Scaffold
+      }, // End builder
+    ); // End LayoutBuilder
   }
 
   @override
