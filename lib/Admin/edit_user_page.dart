@@ -277,12 +277,12 @@ class _EditUserPageState extends State<EditUserPage> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: userImage == null
-                                ? Column(
+                                ? const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.add_a_photo,
                                           size: 50, color: primaryColor),
-                                      const SizedBox(height: 8),
+                                      SizedBox(height: 8),
                                       Text('إضافة صورة شخصية',
                                           style:
                                               TextStyle(color: primaryColor)),
@@ -381,7 +381,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: firstNameController,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                       labelText: 'الاسم الأول *',
                                       prefixIcon: Icon(Icons.person,
                                           color: accentColor),
@@ -396,7 +396,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: fatherNameController,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                       labelText: 'اسم الأب *',
                                       prefixIcon: Icon(Icons.person,
                                           color: accentColor),
@@ -415,7 +415,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: grandfatherNameController,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                       labelText: 'اسم الجد *',
                                       prefixIcon: Icon(Icons.person,
                                           color: accentColor),
@@ -430,7 +430,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: familyNameController,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                       labelText: 'اسم العائلة *',
                                       prefixIcon: Icon(Icons.person,
                                           color: accentColor),
@@ -449,7 +449,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: usernameController,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                       labelText: 'اسم المستخدم *',
                                       prefixIcon: Icon(Icons.person_pin,
                                           color: accentColor),
@@ -473,7 +473,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                     child: InputDecorator(
                                       decoration: InputDecoration(
                                         labelText: 'تاريخ الميلاد *',
-                                        prefixIcon: Icon(Icons.calendar_today,
+                                        prefixIcon: const Icon(Icons.calendar_today,
                                             color: accentColor),
                                         filled: true,
                                         fillColor: Colors.grey[50],
@@ -513,7 +513,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                     decoration: InputDecoration(
                                       labelText: 'الجنس *',
                                       prefixIcon:
-                                          Icon(Icons.wc, color: accentColor),
+                                          const Icon(Icons.wc, color: accentColor),
                                       filled: true,
                                       fillColor: Colors.grey[50],
                                       border: OutlineInputBorder(
@@ -544,7 +544,7 @@ class _EditUserPageState extends State<EditUserPage> {
                                     value: role,
                                     decoration: InputDecoration(
                                       labelText: 'نوع المستخدم *',
-                                      prefixIcon: Icon(
+                                      prefixIcon: const Icon(
                                           Icons.admin_panel_settings,
                                           color: accentColor),
                                       filled: true,
@@ -588,7 +588,7 @@ class _EditUserPageState extends State<EditUserPage> {
                             const SizedBox(height: 15),
                             TextFormField(
                               controller: phoneController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'رقم الهاتف *',
                                 prefixIcon:
                                     Icon(Icons.phone, color: accentColor),
@@ -608,7 +608,7 @@ class _EditUserPageState extends State<EditUserPage> {
                             const SizedBox(height: 15),
                             TextFormField(
                               controller: addressController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'مكان السكن *',
                                 prefixIcon:
                                     Icon(Icons.location_on, color: accentColor),
@@ -621,7 +621,7 @@ class _EditUserPageState extends State<EditUserPage> {
                             const SizedBox(height: 15),
                             TextFormField(
                               controller: idNumberController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'رقم الهوية *',
                                 prefixIcon:
                                     Icon(Icons.credit_card, color: accentColor),
@@ -661,7 +661,7 @@ class _EditUserPageState extends State<EditUserPage> {
                             const SizedBox(height: 20),
                             TextFormField(
                               controller: permissionsController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'الصلاحيات',
                                 prefixIcon:
                                     Icon(Icons.security, color: accentColor),
