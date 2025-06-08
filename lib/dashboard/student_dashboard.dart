@@ -230,6 +230,197 @@ class _StudentDashboardState extends State<StudentDashboard> {
             )
           ],
         ),
+        // Add drawer for large screens
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(color: primaryColor),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _userImageUrl.isNotEmpty
+                        ? CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            child: ClipOval(
+                              child: Image.memory(
+                                base64Decode(_userImageUrl.replaceFirst(
+                                    'data:image/jpeg;base64,', '')),
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        : CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.person,
+                              size: 32,
+                              color: accentColor,
+                            ),
+                          ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _userName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      _translate(context, 'student'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.assignment, color: primaryColor),
+                title: Text(_translate(context, 'view_examinations')),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const StudentGroupsPage()));
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.medical_services, color: Colors.green),
+                title: Text(_translate(context, 'examine_patient')),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const StudentGroupsPage()));
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.notifications, color: Colors.orange),
+                title: Text(_translate(context, 'notifications')),
+                onTap: () {
+                  _showNotificationsDialog(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.home, color: primaryColor),
+                title: Text(_translate(context, 'home')),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StudentDashboard(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        endDrawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(color: primaryColor),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _userImageUrl.isNotEmpty
+                        ? CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            child: ClipOval(
+                              child: Image.memory(
+                                base64Decode(_userImageUrl.replaceFirst(
+                                    'data:image/jpeg;base64,', '')),
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        : CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.person,
+                              size: 32,
+                              color: accentColor,
+                            ),
+                          ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _userName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      _translate(context, 'student'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.assignment, color: primaryColor),
+                title: Text(_translate(context, 'view_examinations')),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const StudentGroupsPage()));
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.medical_services, color: Colors.green),
+                title: Text(_translate(context, 'examine_patient')),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const StudentGroupsPage()));
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.notifications, color: Colors.orange),
+                title: Text(_translate(context, 'notifications')),
+                onTap: () {
+                  _showNotificationsDialog(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.home, color: primaryColor),
+                title: Text(_translate(context, 'home')),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StudentDashboard(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
         body: _buildBody(context),
         bottomNavigationBar: _buildBottomNavigation(context),
       ),
@@ -286,159 +477,169 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.width < 350;
 
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-          ),
-        ),
-        SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom + 20),
-          child: Column(
-            children: [
-              // User info section
-              Container(
-                margin: const EdgeInsets.all(20),
-                height: isSmallScreen ? 180 : 200,
-                decoration: BoxDecoration(
-                  image: const DecorationImage(
-                    image: AssetImage('lib/assets/backgrownd.png'),
-                    fit: BoxFit.cover,
-                  ),
-                  color: const Color(0x4D000000),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0x33000000),
-                        borderRadius: BorderRadius.circular(15),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 900;
+        final gridCount = isWide ? 4 : (constraints.maxWidth > 600 ? 3 : 2);
+        // No ConstrainedBox or Center, let it fill the screen on large displays
+        return Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+            ),
+            SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom + 20),
+              child: Column(
+                children: [
+                  // User info section
+                  Container(
+                    margin: const EdgeInsets.all(20),
+                    height: isSmallScreen ? 180 : 200,
+                    decoration: BoxDecoration(
+                      image: const DecorationImage(
+                        image: AssetImage('lib/assets/backgrownd.png'),
+                        fit: BoxFit.cover,
                       ),
+                      color: const Color(0x4D000000),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
                     ),
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _userImageUrl.isNotEmpty
-                              ? CircleAvatar(
-                                  radius: isSmallScreen ? 30 : 40,
-                                  backgroundColor: Colors.white
-                                      .withAlpha((0.8 * 255).toInt()),
-                                  child: ClipOval(
-                                    child: Image.memory(
-                                      base64Decode(_userImageUrl.replaceFirst(
-                                          'data:image/jpeg;base64,', '')),
-                                      width: isSmallScreen ? 60 : 80,
-                                      height: isSmallScreen ? 60 : 80,
-                                      fit: BoxFit.cover,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0x33000000),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _userImageUrl.isNotEmpty
+                                  ? CircleAvatar(
+                                      radius: isSmallScreen ? 30 : 40,
+                                      backgroundColor: Colors.white
+                                          .withAlpha((0.8 * 255).toInt()),
+                                      child: ClipOval(
+                                        child: Image.memory(
+                                          base64Decode(
+                                              _userImageUrl.replaceFirst(
+                                                  'data:image/jpeg;base64,',
+                                                  '')),
+                                          width: isSmallScreen ? 60 : 80,
+                                          height: isSmallScreen ? 60 : 80,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    )
+                                  : CircleAvatar(
+                                      radius: isSmallScreen ? 30 : 40,
+                                      backgroundColor: Colors.white
+                                          .withAlpha((0.8 * 255).toInt()),
+                                      child: Icon(
+                                        Icons.person,
+                                        size: isSmallScreen ? 30 : 40,
+                                        color: accentColor,
+                                      ),
                                     ),
+                              const SizedBox(height: 15),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: Text(
+                                  _userName,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 16 : 20,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                )
-                              : CircleAvatar(
-                                  radius: isSmallScreen ? 30 : 40,
-                                  backgroundColor: Colors.white
-                                      .withAlpha((0.8 * 255).toInt()),
-                                  child: Icon(
-                                    Icons.person,
-                                    size: isSmallScreen ? 30 : 40,
-                                    color: accentColor,
-                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                          const SizedBox(height: 15),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              _userName,
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 16 : 20,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
                               ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              const SizedBox(height: 5),
+                              Text(
+                                _translate(context, 'student'),
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            _translate(context, 'student'),
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 14 : 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Main feature boxes
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 1.1,
-                  children: [
-                    _buildFeatureBox(
-                      context,
-                      Icons.assignment,
-                      _translate(context, 'view_examinations'),
-                      primaryColor,
-                      onTap: () {
-                        Navigator.push(
+                  // Main feature boxes
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: gridCount,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 1.1,
+                      children: [
+                        _buildFeatureBox(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const StudentGroupsPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureBox(
-                      context,
-                      Icons.medical_services,
-                      _translate(context, 'examine_patient'),
-                      Colors.green,
-                      onTap: () {
-                        Navigator.push(
+                          Icons.assignment,
+                          _translate(context, 'view_examinations'),
+                          primaryColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const StudentGroupsPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFeatureBox(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const StudentGroupsPage(),
-                          ),
-                        );
-                      },
+                          Icons.medical_services,
+                          _translate(context, 'examine_patient'),
+                          Colors.green,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const StudentGroupsPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFeatureBox(
+                          context,
+                          Icons.notifications,
+                          _translate(context, 'notifications'),
+                          Colors.orange,
+                          badgeCount: notifications.length,
+                          onTap: () {
+                            _showNotificationsDialog(context);
+                          },
+                        ),
+                      ],
                     ),
-                    _buildFeatureBox(
-                      context,
-                      Icons.notifications,
-                      _translate(context, 'notifications'),
-                      Colors.orange,
-                      badgeCount: notifications.length,
-                      onTap: () {
-                        _showNotificationsDialog(context);
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 

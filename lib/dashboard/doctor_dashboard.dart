@@ -7,6 +7,7 @@ import '../providers/language_provider.dart';
 import '../loginpage.dart';
 import '../Shared/waiting_list_page.dart';
 import '../Doctor/doctor_pending_cases_page.dart';
+import '../Doctor/groups_page.dart';
 
 class SupervisorDashboard extends StatefulWidget {
   const SupervisorDashboard({super.key});
@@ -564,6 +565,20 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                           MaterialPageRoute(
                               builder: (context) =>
                                   const DoctorPendingCasesPage()),
+                        );
+                      },
+                    ),
+                    _buildFeatureBox(
+                      context,
+                      Icons.group,
+                      'شعب الإشراف',
+                      Colors.blue,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DoctorGroupsPage(),
+                          ),
                         );
                       },
                     ),

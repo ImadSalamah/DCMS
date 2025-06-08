@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../forms/paedodontics_form.dart'; // استيراد الفورم من المسار الصحيح
 
 class DoctorPendingCasesPage extends StatefulWidget {
   const DoctorPendingCasesPage({super.key});
@@ -21,31 +22,57 @@ class _DoctorPendingCasesPageState extends State<DoctorPendingCasesPage> {
 
   Future<void> _loadPendingCases() async {
     setState(() => isLoading = true);
-    final snapshot = await db.child('pendingCases').get();
+
+    // جلب جميع المستخدمين: المفتاح هو UID
+    final usersSnap = await db.child('users').get();
+    Map<String, String> studentIdToName = {};
+
+    if (usersSnap.exists && usersSnap.value is Map) {
+      final usersMap = usersSnap.value as Map;
+      for (var userEntry in usersMap.entries) {
+        final uid = userEntry.key.toString(); // المفتاح هو studentId
+        final user = userEntry.value;
+
+        if (user is Map) {
+          String fullName = '';
+
+          if (user['fullName'] != null && user['fullName'].toString().trim().isNotEmpty) {
+            fullName = user['fullName'].toString().trim();
+          } else {
+            fullName = [
+              user['firstName'],
+              user['fatherName'],
+              user['grandfatherName'],
+              user['familyName'],
+            ].where((e) => e != null && e.toString().trim().isNotEmpty)
+             .map((e) => e.toString().trim())
+             .join(' ');
+          }
+
+          studentIdToName[uid] = fullName.isNotEmpty ? fullName : uid;
+        }
+      }
+    }
+
+    // جلب الحالات المعلقة
+    final snapshot = await db.child('paedodonticsCases').orderByChild('status').equalTo('pending').get();
     final List<Map<String, dynamic>> cases = [];
+
     if (snapshot.exists) {
       final data = snapshot.value as Map<dynamic, dynamic>;
-      // Loop over groupId
-      data.forEach((groupId, groupCases) {
-        if (groupCases is Map) {
-          // Loop over studentId
-          groupCases.forEach((studentId, studentCases) {
-            if (studentCases is Map) {
-              // Loop over caseId
-              studentCases.forEach((caseId, caseData) {
-                if (caseData is Map && caseData['status'] == 'pending') {
-                  final caseMap = Map<String, dynamic>.from(caseData);
-                  caseMap['key'] = caseId;
-                  caseMap['groupId'] = groupId;
-                  caseMap['studentId'] = studentId;
-                  cases.add(caseMap);
-                }
-              });
-            }
-          });
+      for (var entry in data.entries) {
+        final caseData = Map<String, dynamic>.from(entry.value as Map);
+        caseData['key'] = entry.key;
+
+        if (caseData['studentId'] != null) {
+          final sid = caseData['studentId'].toString();
+          caseData['studentName'] = studentIdToName[sid] ?? sid;
         }
-      });
+
+        cases.add(caseData);
+      }
     }
+
     setState(() {
       pendingCases = cases;
       isLoading = false;
@@ -53,92 +80,20 @@ class _DoctorPendingCasesPageState extends State<DoctorPendingCasesPage> {
   }
 
   void _showCaseDialog(Map<String, dynamic> caseData) {
-    final markController = TextEditingController();
-    final commentController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تقييم حالة الطالب'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('رقم الطالب: ${caseData['studentId']}'),
-              Text('History Cases: ${caseData['historyCases']}'),
-              Text('Fissure Cases: ${caseData['fissureCases']}'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: markController,
-                decoration:
-                    const InputDecoration(labelText: 'العلامة (اختياري)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: commentController,
-                decoration: const InputDecoration(
-                    labelText: 'ملاحظة للطالِب (اختياري)'),
-              ),
-            ],
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaedodonticsForm(
+          groupId: caseData['groupId'],
+          caseNumber: caseData['caseNumber'],
+          patient: (caseData['patient'] is Map)
+              ? Map<String, dynamic>.from(caseData['patient'])
+              : {},
+          courseId: caseData['courseId'] ?? '080114140',
+          caseType: caseData['caseType'],
+          initialData: caseData,
+          onSave: _loadPendingCases,
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              // إرجاع الحالة للطالب
-              await db.child('pendingCases').child(caseData['key']).update({
-                'status': 'rejected',
-                'doctorComment': commentController.text,
-              });
-              Navigator.pop(context);
-              _loadPendingCases();
-            },
-            child: const Text('إرجاع للتعديل'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // تقييم الحالة
-              await db.child('pendingCases').child(caseData['key']).update({
-                'status': 'graded',
-                'mark': markController.text.isNotEmpty
-                    ? int.tryParse(markController.text)
-                    : null,
-                'doctorComment': commentController.text,
-              });
-
-              // Update studentCourseProgress
-              final studentId = caseData['studentId'];
-              const courseId = '080114140'; // Paedodontics I clinic
-              // Determine which case type to increment
-              // If both historyCases and fissureCases are present, increment both if >0
-              if ((caseData['historyCases'] ?? 0) > 0) {
-                final progressRef = db
-                    .child('studentCourseProgress')
-                    .child(studentId)
-                    .child(courseId)
-                    .child('historyCasesCompleted');
-                final progressSnap = await progressRef.get();
-                int current = (progressSnap.value ?? 0) as int;
-                await progressRef
-                    .set(current + (caseData['historyCases'] ?? 0));
-              }
-              if ((caseData['fissureCases'] ?? 0) > 0) {
-                final progressRef = db
-                    .child('studentCourseProgress')
-                    .child(studentId)
-                    .child(courseId)
-                    .child('fissureCasesCompleted');
-                final progressSnap = await progressRef.get();
-                int current = (progressSnap.value ?? 0) as int;
-                await progressRef
-                    .set(current + (caseData['fissureCases'] ?? 0));
-              }
-
-              Navigator.pop(context);
-              _loadPendingCases();
-            },
-            child: const Text('حفظ التقييم'),
-          ),
-        ],
       ),
     );
   }
@@ -155,15 +110,19 @@ class _DoctorPendingCasesPageState extends State<DoctorPendingCasesPage> {
                   itemCount: pendingCases.length,
                   itemBuilder: (context, index) {
                     final caseData = pendingCases[index];
+                    final locked = caseData['_locked'] == true;
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      color: locked ? Colors.grey[200] : null,
                       child: ListTile(
-                        title: Text('طالب: ${caseData['studentId']}'),
+                        title: Text('طالب: ${caseData['studentName'] ?? caseData['studentId']}'),
                         subtitle: Text(
-                            'تاريخ الإرسال: ${DateTime.fromMillisecondsSinceEpoch(caseData['submittedAt']).toString().substring(0, 16)}'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _showCaseDialog(caseData),
+                          'تاريخ الإرسال: ${DateTime.fromMillisecondsSinceEpoch(caseData['submittedAt']).toString().substring(0, 16)}',
+                        ),
+                        trailing: locked
+                            ? const Icon(Icons.lock, color: Colors.grey)
+                            : const Icon(Icons.chevron_right),
+                        onTap: locked ? null : () => _showCaseDialog(caseData),
                       ),
                     );
                   },

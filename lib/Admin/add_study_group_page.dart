@@ -3,6 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/language_provider.dart';
 import 'package:provider/provider.dart';
+import 'admin_sidebar.dart';
 
 class AddStudyGroupPage extends StatefulWidget {
   const AddStudyGroupPage({super.key});
@@ -74,17 +75,18 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
       final snapshot = await _databaseRef.child('users').get();
       if (snapshot.exists) {
         final data = snapshot.value as Map<dynamic, dynamic>;
+        final Set<String> seenDoctorIds = {};
         final List<Map<String, dynamic>> doctors = [];
-
         data.forEach((key, value) {
-          if (value['role'] == 'doctor') {
+          final role = value['role']?.toString().trim().toLowerCase();
+          if (role == 'doctor' && !seenDoctorIds.contains(key)) {
             doctors.add({
               'id': key.toString(),
               'name': value['fullName']?.toString() ?? 'Unknown Doctor'
             });
+            seenDoctorIds.add(key);
           }
         });
-
         setState(() => _doctorsList = doctors);
       }
     } catch (e) {
@@ -330,271 +332,314 @@ class AddStudyGroupPageState extends State<AddStudyGroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: Text(_translate(context, 'add_study_group'))),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: Text(_translate(context, 'add_study_group'))),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Group Name
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'group_name'),
-                  border: const OutlineInputBorder(),
+    final isLargeScreen = MediaQuery.of(context).size.width >= 900;
+    const Color primaryColor = Color(0xFF2A7A94);
+    const Color accentColor = Color(0xFF4AB8D8);
+    return Directionality(
+      textDirection: Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode == 'ar'
+          ? TextDirection.rtl
+          : TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_translate(context, 'add_study_group')),
+          backgroundColor: primaryColor,
+        ),
+        drawer: !isLargeScreen
+            ? AdminSidebar(
+                primaryColor: primaryColor,
+                accentColor: accentColor,
+                parentContext: context,
+              )
+            : null,
+        endDrawer: !isLargeScreen
+            ? AdminSidebar(
+                primaryColor: primaryColor,
+                accentColor: accentColor,
+                parentContext: context,
+              )
+            : null,
+        body: Row(
+          children: [
+            if (isLargeScreen)
+              SizedBox(
+                width: 250,
+                child: AdminSidebar(
+                  primaryColor: primaryColor,
+                  accentColor: accentColor,
+                  parentContext: context,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return _translate(context, 'required_field');
-                  }
-                  return null;
-                },
-                onSaved: (value) => _selectedGroupName = value,
               ),
-              const SizedBox(height: 20),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Group Name
+                            TextFormField(
+                              decoration: InputDecoration(
+                                labelText: _translate(context, 'group_name'),
+                                border: const OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return _translate(context, 'required_field');
+                                }
+                                return null;
+                              },
+                              onSaved: (value) => _selectedGroupName = value,
+                            ),
+                            const SizedBox(height: 20),
 
-              // Doctor Selection
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'select_doctor'),
-                  border: const OutlineInputBorder(),
-                ),
-                value: _selectedDoctorId,
-                items: _doctorsList.map((doctor) {
-                  return DropdownMenuItem<String>(
-                    value: doctor['id'],
-                    child: Text(doctor['name']),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedDoctorId = value),
-                validator: (value) {
-                  if (value == null) {
-                    return _translate(context, 'required_field');
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                            // Doctor Selection
+                            DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: _translate(context, 'select_doctor'),
+                                border: const OutlineInputBorder(),
+                              ),
+                              value: _doctorsList.any((d) => d['id'] == _selectedDoctorId) ? _selectedDoctorId : null,
+                              items: _doctorsList.isEmpty
+                                  ? [
+                                      const DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text('لا يوجد أطباء متاحين'),
+                                      ),
+                                    ]
+                                  : _doctorsList.map((doctor) {
+                                      return DropdownMenuItem<String>(
+                                        value: doctor['id'],
+                                        child: Text(doctor['name']),
+                                      );
+                                    }).toList(),
+                              onChanged: _doctorsList.isEmpty ? null : (value) => setState(() => _selectedDoctorId = value),
+                              validator: (value) {
+                                if (value == null) {
+                                  return _translate(context, 'required_field');
+                                }
+                                return null;
+                              },
+                              disabledHint: const Text('لا يوجد أطباء متاحين'),
+                            ),
+                            const SizedBox(height: 20),
 
-              // Required Cases
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'required_cases'),
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return _translate(context, 'required_field');
-                  }
-                  if (int.tryParse(value) == null) {
-                    return _translate(context, 'invalid_number');
-                  }
-                  return null;
-                },
-                onSaved: (value) =>
-                    _requiredCases = int.tryParse(value ?? '0') ?? 0,
-              ),
-              const SizedBox(height: 20),
+                            // Required Cases
+                            TextFormField(
+                              decoration: InputDecoration(
+                                labelText: _translate(context, 'required_cases'),
+                                border: const OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return _translate(context, 'required_field');
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return _translate(context, 'invalid_number');
+                                }
+                                return null;
+                              },
+                              onSaved: (value) =>
+                                  _requiredCases = int.tryParse(value ?? '0') ?? 0,
+                            ),
+                            const SizedBox(height: 20),
 
-              // Time Selection
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectTime(context, true),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: _translate(context, 'start_time'),
-                          border: const OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          _startTime != null
-                              ? '${_startTime!.hour}:${_startTime!.minute.toString().padLeft(2, '0')}'
-                              : _translate(context, 'select_time'),
+                            // Time Selection
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => _selectTime(context, true),
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: _translate(context, 'start_time'),
+                                        border: const OutlineInputBorder(),
+                                      ),
+                                      child: Text(
+                                        _startTime != null
+                                            ? '${_startTime!.hour}:${_startTime!.minute.toString().padLeft(2, '0')}'
+                                            : _translate(context, 'select_time'),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => _selectTime(context, false),
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: _translate(context, 'end_time'),
+                                        border: const OutlineInputBorder(),
+                                      ),
+                                      child: Text(
+                                        _endTime != null
+                                            ? '${_endTime!.hour}:${_endTime!.minute.toString().padLeft(2, '0')}'
+                                            : _translate(context, 'select_time'),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Clinic Selection
+                            DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: _translate(context, 'select_clinic'),
+                                border: const OutlineInputBorder(),
+                              ),
+                              value: _selectedClinic,
+                              items: _clinicsList.map((clinic) {
+                                return DropdownMenuItem<String>(
+                                  value: clinic,
+                                  child: Text(clinic),
+                                );
+                              }).toList(),
+                              onChanged: (value) => setState(() => _selectedClinic = value),
+                              validator: (value) {
+                                if (value == null) {
+                                  return _translate(context, 'required_field');
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Days Selection
+                            Text(
+                              _translate(context, 'select_days'),
+                              style:
+                                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8.0,
+                              children: _daysList.map((day) {
+                                return FilterChip(
+                                  label: Text(day),
+                                  selected: _selectedDays.contains(day),
+                                  onSelected: (selected) => _toggleDay(day),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Student Section
+                            Text(
+                              _translate(context, 'add_student'),
+                              style:
+                                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: TextFormField(
+                                    decoration: InputDecoration(
+                                      labelText: _translate(context, 'student_id'),
+                                      border: const OutlineInputBorder(),
+                                    ),
+                                    onChanged: (value) => _studentId = value,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  flex: 1,
+                                  child: ElevatedButton(
+                                    onPressed: _findStudent,
+                                    child: Text(_translate(context, 'search')),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            if (_selectedStudent != null) ...[
+                              Text(
+                                '${_translate(context, 'student_name')}: ${_selectedStudent!['name']}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 10),
+                            ] else if (_studentId != null && _studentId!.isNotEmpty) ...[
+                              Text(
+                                _translate(context, 'student_not_found'),
+                                style: const TextStyle(fontSize: 16, color: Colors.red),
+                              ),
+                            ],
+                            const SizedBox(height: 20),
+
+                            // Course Selection
+                            DropdownButtonFormField<String>(
+                              decoration: const InputDecoration(
+                                labelText: 'رقم الكورس',
+                                border: OutlineInputBorder(),
+                              ),
+                              value: _selectedCourseId,
+                              items: _coursesList.map((course) {
+                                return DropdownMenuItem<String>(
+                                  value: course['id'],
+                                  child: Text(course['name'] ?? ''),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCourseId = value;
+                                  _selectedFormId =
+                                      value != null ? _courseFormMap[value] : null;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'هذا الحقل مطلوب';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Form Required Count
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'عدد مرات تعبئة الفورم',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'هذا الحقل مطلوب';
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return 'رقم غير صحيح';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) =>
+                                  _formRequiredCount = int.tryParse(value ?? '0') ?? 0,
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Submit Button
+                            Center(
+                              child: ElevatedButton(
+                                onPressed: _submitForm,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 40, vertical: 15),
+                                ),
+                                child: Text(_translate(context, 'submit')),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectTime(context, false),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: _translate(context, 'end_time'),
-                          border: const OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          _endTime != null
-                              ? '${_endTime!.hour}:${_endTime!.minute.toString().padLeft(2, '0')}'
-                              : _translate(context, 'select_time'),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Clinic Selection
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: _translate(context, 'select_clinic'),
-                  border: const OutlineInputBorder(),
-                ),
-                value: _selectedClinic,
-                items: _clinicsList.map((clinic) {
-                  return DropdownMenuItem<String>(
-                    value: clinic,
-                    child: Text(clinic),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedClinic = value),
-                validator: (value) {
-                  if (value == null) {
-                    return _translate(context, 'required_field');
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Days Selection
-              Text(
-                _translate(context, 'select_days'),
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8.0,
-                children: _daysList.map((day) {
-                  return FilterChip(
-                    label: Text(day),
-                    selected: _selectedDays.contains(day),
-                    onSelected: (selected) => _toggleDay(day),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-
-              // Student Section
-              Text(
-                _translate(context, 'add_student'),
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        labelText: _translate(context, 'student_id'),
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (value) => _studentId = value,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 1,
-                    child: ElevatedButton(
-                      onPressed: _findStudent,
-                      child: Text(_translate(context, 'search')),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (_selectedStudent != null) ...[
-                Text(
-                  '${_translate(context, 'student_name')}: ${_selectedStudent!['name']}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 10),
-              ] else if (_studentId != null && _studentId!.isNotEmpty) ...[
-                Text(
-                  _translate(context, 'student_not_found'),
-                  style: const TextStyle(fontSize: 16, color: Colors.red),
-                ),
-              ],
-              const SizedBox(height: 20),
-
-              // Course Selection
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'رقم الكورس',
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedCourseId,
-                items: _coursesList.map((course) {
-                  return DropdownMenuItem<String>(
-                    value: course['id'],
-                    child: Text(course['name'] ?? ''),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCourseId = value;
-                    _selectedFormId =
-                        value != null ? _courseFormMap[value] : null;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'هذا الحقل مطلوب';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Form Required Count
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'عدد مرات تعبئة الفورم',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'هذا الحقل مطلوب';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'رقم غير صحيح';
-                  }
-                  return null;
-                },
-                onSaved: (value) =>
-                    _formRequiredCount = int.tryParse(value ?? '0') ?? 0,
-              ),
-              const SizedBox(height: 20),
-
-              // Submit Button
-              Center(
-                child: ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
-                  ),
-                  child: Text(_translate(context, 'submit')),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

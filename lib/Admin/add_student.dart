@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'admin_sidebar.dart';
 
 class AddDentalStudentPage extends StatefulWidget {
   const AddDentalStudentPage({super.key});
@@ -45,397 +46,446 @@ class _AddDentalStudentPageState extends State<AddDentalStudentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Add Dental Student'),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Profile Image
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    border: Border.all(color: primaryColor),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: _buildImageWidget(),
-                  ),
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isLargeScreen = constraints.maxWidth >= 900;
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            title: const Text('Add Dental Student'),
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            leading: isLargeScreen ? null : Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
-              const SizedBox(height: 30),
-
-              // Personal Information Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Personal Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Name Fields
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _firstNameController,
-                            labelText: 'First Name *',
-                            prefixIcon: Icon(Icons.person, color: accentColor),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'This field is required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _fatherNameController,
-                            labelText: 'Father Name *',
-                            prefixIcon: Icon(Icons.person, color: accentColor),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'This field is required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _grandfatherNameController,
-                            labelText: 'Grandfather Name *',
-                            prefixIcon: Icon(Icons.person, color: accentColor),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'This field is required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _familyNameController,
-                            labelText: 'Family Name *',
-                            prefixIcon: Icon(Icons.person, color: accentColor),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'This field is required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Username and Birth Date
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _usernameController,
-                            labelText: 'Username *',
-                            prefixIcon: Icon(Icons.person_pin, color: accentColor),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'This field is required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: _selectBirthDate,
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Birth Date *',
-                                labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
-                                prefixIcon: Icon(Icons.calendar_today, color: accentColor),
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                              ),
-                              child: Text(
-                                _birthDate == null
-                                    ? 'Select date'
-                                    : DateFormat('yyyy-MM-dd').format(_birthDate!),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: _birthDate == null ? Colors.grey[600] : Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Gender Radio Buttons
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 8.0),
-                          child: Text(
-                            'Gender *',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Male'),
-                                value: 'male',
-                                groupValue: _gender,
-                                activeColor: primaryColor,
-                                onChanged: (value) => setState(() => _gender = value),
-                              ),
-                            ),
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Female'),
-                                value: 'female',
-                                groupValue: _gender,
-                                activeColor: primaryColor,
-                                onChanged: (value) => setState(() => _gender = value),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Phone Number
-                    _buildTextFormField(
-                      controller: _phoneController,
-                      labelText: 'Phone Number *',
-                      keyboardType: TextInputType.phone,
-                      maxLength: 10,
-                      prefixIcon: Icon(Icons.phone, color: accentColor),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'This field is required';
-                        }
-                        if (value.length < 10) {
-                          return 'Phone must be 10 digits';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Address
-                    _buildTextFormField(
-                      controller: _addressController,
-                      labelText: 'Address *',
-                      prefixIcon: Icon(Icons.location_on, color: accentColor),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'This field is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-
-                    // ID Number
-                    _buildTextFormField(
-                      controller: _idNumberController,
-                      labelText: 'ID Number *',
-                      keyboardType: TextInputType.number,
-                      maxLength: 9,
-                      prefixIcon: Icon(Icons.credit_card, color: accentColor),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'This field is required';
-                        }
-                        if (value.length < 9) {
-                          return 'ID must be 9 digits';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Student ID
-                    _buildTextFormField(
-                      controller: _studentIdController,
-                      labelText: 'Student ID *',
-                      keyboardType: TextInputType.number,
-                      maxLength: 9,
-                      prefixIcon: Icon(Icons.school, color: accentColor),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'This field is required';
-                        }
-                        if (value.length < 9) {
-                          return 'Student ID must be 9 digits';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Account Information Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Account Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Password
-                    _buildTextFormField(
-                      controller: _passwordController,
-                      labelText: 'Password *',
-                      obscureText: !_showPassword,
-                      prefixIcon: Icon(Icons.lock, color: accentColor),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _showPassword ? Icons.visibility : Icons.visibility_off,
-                          color: accentColor,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _showPassword = !_showPassword;
-                          });
-                        },
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'This field is required';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Confirm Password
-                    _buildTextFormField(
-                      controller: _confirmPasswordController,
-                      labelText: 'Confirm Password *',
-                      obscureText: !_showConfirmPassword,
-                      prefixIcon: Icon(Icons.lock_outline, color: accentColor),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                          color: accentColor,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _showConfirmPassword = !_showConfirmPassword;
-                          });
-                        },
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'This field is required';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Add Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _addStudent,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                    'Add Student',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
-        ),
-      ),
+          drawer: isLargeScreen ? null : AdminSidebar(
+            primaryColor: primaryColor,
+            accentColor: accentColor,
+            userName: null, // يمكن تمرير اسم المستخدم لاحقًا
+            userImageUrl: null,
+            onLogout: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.of(context).pushReplacementNamed('/');
+              }
+            },
+            parentContext: context,
+          ),
+          body: Row(
+            children: [
+              if (isLargeScreen)
+                SizedBox(
+                  width: 260,
+                  child: AdminSidebar(
+                    primaryColor: primaryColor,
+                    accentColor: accentColor,
+                    userName: null,
+                    userImageUrl: null,
+                    onLogout: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (mounted) {
+                        Navigator.of(context).pushReplacementNamed('/');
+                      }
+                    },
+                    parentContext: context,
+                  ),
+                ),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Profile Image
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              width: 150,
+                              height: 150,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                border: Border.all(color: primaryColor),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: _buildImageWidget(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Personal Information Section
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Personal Information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Name Fields
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildTextFormField(
+                                        controller: _firstNameController,
+                                        labelText: 'First Name *',
+                                        prefixIcon: Icon(Icons.person, color: accentColor),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'This field is required';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _buildTextFormField(
+                                        controller: _fatherNameController,
+                                        labelText: 'Father Name *',
+                                        prefixIcon: Icon(Icons.person, color: accentColor),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'This field is required';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildTextFormField(
+                                        controller: _grandfatherNameController,
+                                        labelText: 'Grandfather Name *',
+                                        prefixIcon: Icon(Icons.person, color: accentColor),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'This field is required';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _buildTextFormField(
+                                        controller: _familyNameController,
+                                        labelText: 'Family Name *',
+                                        prefixIcon: Icon(Icons.person, color: accentColor),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'This field is required';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+
+                                // Username and Birth Date
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildTextFormField(
+                                        controller: _usernameController,
+                                        labelText: 'Username *',
+                                        prefixIcon: Icon(Icons.person_pin, color: accentColor),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'This field is required';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: _selectBirthDate,
+                                        child: InputDecorator(
+                                          decoration: InputDecoration(
+                                            labelText: 'Birth Date *',
+                                            labelStyle: TextStyle(color: primaryColor.withValues(alpha: 0.8)),
+                                            prefixIcon: Icon(Icons.calendar_today, color: accentColor),
+                                            filled: true,
+                                            fillColor: Colors.grey[50],
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                              borderSide: BorderSide(color: Colors.grey.shade300),
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                          ),
+                                          child: Text(
+                                            _birthDate == null
+                                                ? 'Select date'
+                                                : DateFormat('yyyy-MM-dd').format(_birthDate!),
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: _birthDate == null ? Colors.grey[600] : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+
+                                // Gender Radio Buttons
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.only(bottom: 8.0),
+                                      child: Text(
+                                        'Gender *',
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: RadioListTile<String>(
+                                            title: const Text('Male'),
+                                            value: 'male',
+                                            groupValue: _gender,
+                                            activeColor: primaryColor,
+                                            onChanged: (value) => setState(() => _gender = value),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: RadioListTile<String>(
+                                            title: const Text('Female'),
+                                            value: 'female',
+                                            groupValue: _gender,
+                                            activeColor: primaryColor,
+                                            onChanged: (value) => setState(() => _gender = value),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+
+                                // Phone Number
+                                _buildTextFormField(
+                                  controller: _phoneController,
+                                  labelText: 'Phone Number *',
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  prefixIcon: Icon(Icons.phone, color: accentColor),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'This field is required';
+                                    }
+                                    if (value.length < 10) {
+                                      return 'Phone must be 10 digits';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 15),
+
+                                // Address
+                                _buildTextFormField(
+                                  controller: _addressController,
+                                  labelText: 'Address *',
+                                  prefixIcon: Icon(Icons.location_on, color: accentColor),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'This field is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 15),
+
+                                // ID Number
+                                _buildTextFormField(
+                                  controller: _idNumberController,
+                                  labelText: 'ID Number *',
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 9,
+                                  prefixIcon: Icon(Icons.credit_card, color: accentColor),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'This field is required';
+                                    }
+                                    if (value.length < 9) {
+                                      return 'ID must be 9 digits';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 15),
+
+                                // Student ID
+                                _buildTextFormField(
+                                  controller: _studentIdController,
+                                  labelText: 'Student ID *',
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 9,
+                                  prefixIcon: Icon(Icons.school, color: accentColor),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'This field is required';
+                                    }
+                                    if (value.length < 9) {
+                                      return 'Student ID must be 9 digits';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 15),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Account Information Section
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Account Information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Password
+                                _buildTextFormField(
+                                  controller: _passwordController,
+                                  labelText: 'Password *',
+                                  obscureText: !_showPassword,
+                                  prefixIcon: Icon(Icons.lock, color: accentColor),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _showPassword ? Icons.visibility : Icons.visibility_off,
+                                      color: accentColor,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _showPassword = !_showPassword;
+                                      });
+                                    },
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'This field is required';
+                                    }
+                                    if (value.length < 6) {
+                                      return 'Password must be at least 6 characters';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 15),
+
+                                // Confirm Password
+                                _buildTextFormField(
+                                  controller: _confirmPasswordController,
+                                  labelText: 'Confirm Password *',
+                                  obscureText: !_showConfirmPassword,
+                                  prefixIcon: Icon(Icons.lock_outline, color: accentColor),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                                      color: accentColor,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _showConfirmPassword = !_showConfirmPassword;
+                                      });
+                                    },
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'This field is required';
+                                    }
+                                    if (value != _passwordController.text) {
+                                      return 'Passwords do not match';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Add Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _addStudent,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                'Add Student',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+           ) ],
+            ),
+          );
+      },
     );
   }
 

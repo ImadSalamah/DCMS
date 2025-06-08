@@ -103,7 +103,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const LoginPage(),
+      home: const LoginPage(), // Changed from FaceRecognitionPage to LoginPage
     );
   }
 }
