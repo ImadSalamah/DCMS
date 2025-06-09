@@ -101,21 +101,31 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
     });
   }
 
+  String _getFullName(Map<String, dynamic> p) {
+    final firstName = p['firstName']?.toString().trim() ?? '';
+    final fatherName = p['fatherName']?.toString().trim() ?? '';
+    final grandfatherName = p['grandfatherName']?.toString().trim() ?? '';
+    final familyName = p['familyName']?.toString().trim() ?? '';
+    return [firstName, fatherName, grandfatherName, familyName]
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+  }
+
   Widget _buildPatientInfo() {
     final p = widget.patientData;
     if (p == null) return const SizedBox.shrink();
-
+    final fullName = _getFullName(p);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (p['firstName'] != null && p['familyName'] != null)
-              Text('Patient: \\${p['firstName']} \\${p['familyName']}'),
-            if (widget.age != null) Text('Age: \\${widget.age}'),
-            if (p['gender'] != null) Text('Gender: \\${p['gender']}'),
-            if (p['phone'] != null) Text('Phone: \\${p['phone']}'),
+            if (fullName.isNotEmpty)
+              Text('Patient: $fullName'),
+            if (widget.age != null) Text('Age: ${widget.age}'),
+            if (p['gender'] != null) Text('Gender: ${p['gender']}'),
+            if (p['phone'] != null) Text('Phone: ${p['phone']}'),
           ],
         ),
       ),
@@ -249,17 +259,19 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
 
   Future<void> _submitExamination() async {
     try {
-      final patientId = widget.patientData?['id'];
+      // Use the real user UID if available
+      final patientId = widget.patientData?['uid'] ?? widget.patientData?['userId'] ?? widget.patientData?['id'];
       if (patientId == null) {
         throw Exception('Patient ID is null');
       }
       final examRecord = {
         'patientId': patientId,
         'doctorId': widget.doctorId,
-        'timestamp': ServerValue.timestamp,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
         'examData': _examData,
       };
-      await _database.child('examinations').push().set(examRecord);
+      // حفظ الفحص في مجموعة منفصلة للأطباء
+      await _database.child('doctorExaminations').push().set(examRecord);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Examination saved successfully!')),
@@ -268,7 +280,7 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text('Error:  \\${e.toString()}')),
       );
     }
   }

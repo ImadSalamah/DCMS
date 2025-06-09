@@ -155,33 +155,28 @@ class _WaitingListPageState extends State<WaitingListPage> {
         final waitingData = Map<String, dynamic>.from(value);
         waitingData['id'] = key.toString();
 
+        // جلب بيانات المستخدم من جدول users باستخدام userId
         final user = allUsers.firstWhere(
-          (u) => u['id'] == waitingData['id'],
+          (u) => u['id'] == waitingData['userId'],
           orElse: () => {},
         );
 
-        if (user.isNotEmpty) {
-          dynamic birthDate = user['birthDate'];
-          if (birthDate is String) {
-            birthDate = int.tryParse(birthDate) ?? 0;
-          }
-
-          waitingData.addAll({
-            'firstName': user['firstName']?.toString().trim() ??
-                _translate(context, 'unknown'),
-            'fatherName': user['fatherName']?.toString().trim() ??
-                _translate(context, 'unknown'),
-            'grandfatherName': user['grandfatherName']?.toString().trim() ??
-                _translate(context, 'unknown'),
-            'familyName': user['familyName']?.toString().trim() ??
-                _translate(context, 'unknown'),
-            'birthDate': birthDate ?? 0,
-            'gender': user['gender']?.toString().trim() ??
-                _translate(context, 'unknown'),
-            'phone': user['phone']?.toString().trim() ??
-                _translate(context, 'no_number'),
-          });
-        }
+        // إذا وجد المستخدم في جدول users، استخدم بياناته، وإلا استخدم البيانات من عنصر قائمة الانتظار
+        waitingData['firstName'] = user.isNotEmpty
+            ? user['firstName']?.toString().trim() ?? ''
+            : (waitingData['name']?.toString().split(' ').first ?? '');
+        waitingData['fatherName'] = user.isNotEmpty
+            ? user['fatherName']?.toString().trim() ?? ''
+            : '';
+        waitingData['grandfatherName'] = user.isNotEmpty
+            ? user['grandfatherName']?.toString().trim() ?? ''
+            : '';
+        waitingData['familyName'] = user.isNotEmpty
+            ? user['familyName']?.toString().trim() ?? ''
+            : (waitingData['name']?.toString().split(' ').length == 4 ? waitingData['name']?.toString().split(' ').last : '');
+        waitingData['birthDate'] = user.isNotEmpty ? user['birthDate'] ?? 0 : 0;
+        waitingData['gender'] = user.isNotEmpty ? user['gender']?.toString().trim() ?? '' : '';
+        waitingData['phone'] = waitingData['phone'] ?? (user.isNotEmpty ? user['phone']?.toString().trim() ?? '' : '');
 
         result.add(waitingData);
       }

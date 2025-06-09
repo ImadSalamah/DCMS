@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 
 class ScreeningForm extends StatefulWidget {
   final Map<String, dynamic>? patientData;
@@ -158,17 +156,27 @@ class _ScreeningFormState extends State<ScreeningForm> {
     return categories.fold(0, (sum, item) => sum + (item['score'] as int));
   }
 
+  String _getFullName(Map<String, dynamic> p) {
+    final firstName = p['firstName']?.toString().trim() ?? '';
+    final fatherName = p['fatherName']?.toString().trim() ?? '';
+    final grandfatherName = p['grandfatherName']?.toString().trim() ?? '';
+    final familyName = p['familyName']?.toString().trim() ?? '';
+    return [firstName, fatherName, grandfatherName, familyName]
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+  }
+
   Widget _buildPatientInfo() {
     final p = widget.patientData;
     if (p == null) return const SizedBox.shrink();
-
+    final fullName = _getFullName(p);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (p['firstName'] != null && p['familyName'] != null)
+            if (fullName.isNotEmpty)
               RichText(
                 text: TextSpan(
                   style: DefaultTextStyle.of(context).style,
@@ -177,7 +185,7 @@ class _ScreeningFormState extends State<ScreeningForm> {
                       text: 'اسم المريض: ',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    TextSpan(text: '${p['firstName']} ${p['familyName']}'),
+                    TextSpan(text: fullName),
                   ],
                 ),
               ),
@@ -246,44 +254,14 @@ class _ScreeningFormState extends State<ScreeningForm> {
         ),
       );
 
-  Future<void> _saveScreeningToDatabase() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب تسجيل الدخول أولاً')),
-      );
-      return;
-    }
-    final doctorId = user.uid;
-    final patientId =
-        widget.patientData != null && widget.patientData!['id'] != null
-            ? widget.patientData!['id']
-            : null;
-    if (patientId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لا يوجد معرف للمريض')),
-      );
-      return;
-    }
-    final formData = _collectFormData();
-    final data = {
-      'doctorId': doctorId,
-      'patientId': patientId,
-      'screening': formData,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    };
-    final dbRef = FirebaseDatabase.instance.ref();
-    await dbRef.child('examinations').child('examinations').push().set(data);
-  }
-
   void _submitForm() async {
     final formData = _collectFormData();
     if (widget.onSave != null) {
       widget.onSave!(formData);
     }
-    await _saveScreeningToDatabase();
+    // لا تحفظ في قاعدة البيانات هنا
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم حفظ بيانات الفحص المبدئي')),
+      const SnackBar(content: Text('تم حفظ بيانات الفحص المبدئي (محلياً فقط)')),
     );
   }
 

@@ -24,6 +24,7 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
+  // أضف الترجمة الجديدة
   final Map<String, Map<String, String>> _translations = {
     'patient_files': {'ar': 'ملفات المرضى', 'en': 'Patient Files'},
     'waiting_list': {'ar': 'قائمة الانتظار', 'en': 'Waiting List'},
@@ -39,6 +40,7 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
     'age_unknown': {'ar': 'العمر غير معروف', 'en': 'Age unknown'},
     'next_step': {'ar': 'الخطوة التالية', 'en': 'Next Step'},
     'search_hint': {'ar': 'ابحث بالاسم أو رقم الهوية...', 'en': 'Search by name or ID...'},
+    'already_in_waiting_list': {'ar': 'المريض موجود بالفعل في قائمة الانتظار', 'en': 'Patient is already in the waiting list'},
   };
 
   @override
@@ -199,6 +201,33 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
     ].join(' ');
   }
 
+  void _addToWaitingList(Map<String, dynamic> user) async {
+    // تحقق إذا كان المريض موجود بالفعل في قائمة الانتظار
+    final alreadyExists = waitingList.any((item) => item['userId'] == user['id']);
+    if (alreadyExists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_translate(context, 'already_in_waiting_list'))),
+      );
+      return;
+    }
+    try {
+      await _waitingListRef.push().set({
+        'userId': user['id'],
+        'name': _getFullName(user),
+        'phone': user['phone'] ?? '',
+        'addedAt': DateTime.now().toIso8601String(),
+      });
+      await _loadData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_translate(context, 'add_to_waiting_list') + ' ✔️')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ أثناء الإضافة: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLargeScreen = MediaQuery.of(context).size.width >= 900;
@@ -336,7 +365,7 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
                                         trailing: IconButton(
                                           icon: const Icon(Icons.add, color: Colors.green),
                                           onPressed: () {
-                                            // Add to waiting list logic
+                                            _addToWaitingList(user);
                                           },
                                         ),
                                       ),

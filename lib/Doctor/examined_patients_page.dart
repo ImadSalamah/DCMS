@@ -22,8 +22,9 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
   static const Color errorColor = Color(0xFFE53935);
   static const Color successColor = Color(0xFF43A047);
 
+  // استخدم doctorExaminations بدلاً من examinations
   final DatabaseReference _examinationsRef =
-      FirebaseDatabase.instance.ref('examinations');
+      FirebaseDatabase.instance.ref('doctorExaminations');
   final DatabaseReference _doctorsRef = FirebaseDatabase.instance.ref('staff');
   final DatabaseReference _patientsRef = FirebaseDatabase.instance.ref('users');
 
@@ -112,6 +113,20 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
       'en':
           'All old examinations will be deleted, keeping only the latest exam for each patient.'
     },
+  };
+
+  // خريطة الألوان إلى اسم المرض بالعربي كما في الليجند
+  static const Map<String, String> colorToDiseaseArabic = {
+    'ffffffff': 'سليم',
+    'ff8b4513': 'تسوس',
+    'fff44336': 'التهاب',
+    'ff607d8b': 'كسر',
+    'ffffd700': 'حشوة',
+    'ffffff00': 'حشوة مؤقتة',
+    'ff000000': 'سن مفقود',
+    'ffa020f0': 'جسر',
+    'ff00ff00': 'زرع',
+    'ffffa500': 'تلبيسة',
   };
 
   @override
@@ -269,35 +284,43 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
       });
 
       final DataSnapshot examinationsSnapshot = await _examinationsRef.get();
+      debugPrint('doctorExaminations snapshot exists: \\${examinationsSnapshot.exists}');
       if (!examinationsSnapshot.exists) {
         setState(() {
           _isLoading = false;
           _filteredExaminations = [];
         });
+        debugPrint('No doctorExaminations found in database.');
         return;
       }
 
       final Map<String, dynamic> examinations =
           _safeConvertMap(examinationsSnapshot.value);
+      debugPrint('Loaded doctorExaminations count: \\${examinations.length}');
       final Map<String, Map<String, dynamic>> latestExaminations = {};
 
       // تحديد أحدث فحص لكل مريض
       examinations.forEach((key, value) {
-        final examData = _safeConvertMap(value);
-        final String? patientId = examData['patientId']?.toString();
+        final examData = _safeConvertMap(value['examData']);
+        final String? patientId = value['patientId']?.toString() ?? examData['patientId']?.toString();
+        final int? timestamp = value['timestamp'] is int ? value['timestamp'] : int.tryParse(value['timestamp']?.toString() ?? examData['timestamp']?.toString() ?? '0');
+        final String? doctorId = value['doctorId']?.toString();
 
         if (patientId == null || patientId.isEmpty) return;
 
         if (!latestExaminations.containsKey(patientId) ||
-            (examData['timestamp'] ?? 0) >
-                (latestExaminations[patientId]!['examination']['timestamp'] ??
-                    0)) {
+            (timestamp ?? 0) > (latestExaminations[patientId]?['timestamp'] ?? 0)) {
           latestExaminations[patientId] = {
-            'examination': examData,
+            ...examData,
+            'patientId': patientId,
+            'timestamp': timestamp,
+            'doctorId': doctorId,
             'examinationId': key,
           };
         }
       });
+
+      debugPrint('Latest examinations after filtering: \\${latestExaminations.length}');
 
       // تحميل بيانات المرضى والأطباء
       final List<Map<String, dynamic>> allExaminations = [];
@@ -308,6 +331,9 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
 
           final DataSnapshot patientSnapshot =
               await _patientsRef.child(patientId).get();
+          debugPrint('Loading patientId: ' + patientId);
+          debugPrint('patientSnapshot.exists: ' + patientSnapshot.exists.toString());
+          debugPrint('patientSnapshot.value: ' + patientSnapshot.value.toString());
           if (!mounted) return;
           if (!patientSnapshot.exists) return;
 
@@ -315,13 +341,13 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
               _safeConvertMap(patientSnapshot.value);
           patientData['id'] = patientId;
 
-          final String? doctorId =
-              examData['examination']['doctorId']?.toString();
-          Map<String, dynamic> doctorData = {
+         final String? doctorId = examData['doctorId']?.toString();
+           Map<String, dynamic> doctorData = {
             'name': _translate(context, 'unknown')
           };
 
           if (doctorId != null && doctorId.isNotEmpty) {
+            // جرب أولاً في staff
             final DataSnapshot doctorSnapshot =
                 await _doctorsRef.child(doctorId).get();
             if (!mounted) return;
@@ -329,17 +355,26 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
               doctorData = _safeConvertMap(doctorSnapshot.value);
               doctorData['name'] =
                   doctorData['fullName'] ?? _translate(context, 'unknown');
+            } else {
+              // إذا لم يوجد في staff جرب في users
+              final DataSnapshot userDoctorSnapshot =
+                  await FirebaseDatabase.instance.ref('users').child(doctorId).get();
+              if (userDoctorSnapshot.exists) {
+                final userDoctorData = _safeConvertMap(userDoctorSnapshot.value);
+                doctorData['name'] =
+                    '${userDoctorData['firstName'] ?? ''} ${userDoctorData['fatherName'] ?? ''} ${userDoctorData['grandfatherName'] ?? ''} ${userDoctorData['familyName'] ?? ''}'.trim();
+              }
             }
           }
 
           allExaminations.add({
             'patient': patientData,
-            'examination': examData['examination'],
+            'examination': examData,
             'doctor': doctorData,
             'examinationId': examData['examinationId'],
           });
         } catch (e) {
-          debugPrint('Error processing patient ${entry.key}: $e');
+          debugPrint('Error processing patient  ̄${entry.key}: $e');
         }
       });
 
@@ -469,7 +504,7 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
     final patient = _safeConvertMap(patientExam['patient']);
     final exam = _safeConvertMap(patientExam['examination']);
     final doctor = _safeConvertMap(patientExam['doctor']);
-    final examData = _safeConvertMap(exam['examData']);
+    final examData = exam; // No longer nested
     final screeningData = _safeConvertMap(examData['screening']);
 
     final fullName = _getFullName(patient);
@@ -621,27 +656,39 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
     }
 
     if (chart['teethConditions'] != null && chart['teethConditions'] is Map) {
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+      final isEnglish = languageProvider.isEnglish;
       final conditions = _safeConvertMap(chart['teethConditions']);
       conditions.forEach((tooth, color) {
         if (color is String) {
-          final colorMeaning = _getColorMeaning(color);
+          final String colorKey = color.toLowerCase();
+          final String diseaseLabel = isEnglish
+            ? (_translations[colorToDiseaseArabic[colorKey] ?? '']?['en'] ?? colorToDiseaseArabic[colorKey] ?? color)
+            : (colorToDiseaseArabic[colorKey] ?? color);
+          final String toothLabel = isEnglish ? _translate(context, 'tooth') : 'سن';
           widgets.add(
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
+                  Text(
+                    '$toothLabel $tooth - ',
+                    style: const TextStyle(color: Colors.black),
+                  ),
                   Container(
-                    width: 20,
-                    height: 20,
+                    width: 16,
+                    height: 16,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: _parseColor(color),
-                      border: Border.all(color: borderColor),
                       borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.black12, width: 1),
                     ),
-                    margin: const EdgeInsets.only(right: 8),
                   ),
                   Text(
-                      '${_translate(context, 'tooth')} $tooth - ${_translate(context, colorMeaning.toLowerCase())}'),
+                    diseaseLabel,
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
@@ -651,19 +698,6 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
     }
 
     return widgets;
-  }
-
-  String _getColorMeaning(String hexColor) {
-    final colorMap = {
-      'ff000000': 'caries',
-      'ffffa500': 'filled',
-      'ff8b4513': 'root_canal',
-      'fff44336': 'extraction_needed',
-      'ff607d8b': 'crown',
-      'ffffd700': 'impacted',
-      'ffffff00': 'missing',
-    };
-    return colorMap[hexColor.toLowerCase()] ?? 'unknown';
   }
 
   Color _parseColor(String color) {
